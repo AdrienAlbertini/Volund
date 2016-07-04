@@ -87,9 +87,9 @@ func getSourceFiles(srcFolders []string, extension string, folderInfos ObakeBuil
 
 	for _, srcFolder := range srcFolders {
 		if srcFolder == "." {
-			sourceFilesInFolder = getAllFilesFromDir(folderInfos.path+"/", extension)
+			sourceFilesInFolder = append(sourceFilesInFolder, getAllFilesFromDir(folderInfos.path+"/", extension)...)
 		} else {
-			sourceFilesInFolder = getAllFilesFromDir(folderInfos.path+"/"+srcFolder, extension)
+			sourceFilesInFolder = append(sourceFilesInFolder, getAllFilesFromDir(folderInfos.path+"/"+srcFolder, extension)...)
 		}
 		sourceFiles = append(sourceFiles, sourceFilesInFolder...)
 		//		fmt.Printf("SourceFiles: %v\n", sourceFiles)

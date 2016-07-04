@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	//	"github.com/fatih/color"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,8 +11,10 @@ import (
 	"strings"
 )
 
-func buildAndGetObjectFiles(sourceFilesPath []string, sourceFiles []string, headersFolders []string,
-	externIncludes []string, externLibs []string, extension string, outFolder string, folderInfos ObakeBuildFolder,
+func buildAndGetObjectFiles(sourceFilesPath []string, sourceFiles []string,
+	headersFolders []string, externIncludes []string,
+	externLibs []string, extension string,
+	outFolder string, folderInfos ObakeBuildFolder,
 	staticLibs []string, allLibs []*StaticLibType) (success bool, objectFilesPath []string) {
 	for i, srcFilePath := range sourceFilesPath {
 		oFilePath := outFolder + "/" + strings.Replace(sourceFiles[i], extension, ".o", -1)
@@ -36,11 +39,13 @@ func buildAndGetObjectFiles(sourceFilesPath []string, sourceFiles []string, head
 		args = append(args, getExternIncludesArgs(externIncludes)...)
 		args = append(args, getExternLibsArgs(externLibs)...)
 
-		fmt.Printf("Obj files: %s %v\n", toolchain, args)
+		boldYellow.Print("ObjFile: ")
+		fmt.Printf("%s %v\n", toolchain, args)
 		cmd := exec.Command(toolchain, args...)
 		_, err := cmd.CombinedOutput()
 		if err != nil {
-			fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, fmt.Sprint(err))
+			boldRed.Printf("ObjFile: %s | Error: %s\n", srcFilePath, fmt.Sprint(err))
+			//fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, fmt.Sprint(err))
 			success = false
 			return
 		}
@@ -74,6 +79,8 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 
 	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(binary.staticLibs, allLibs, binary.name)
 
+	boldCyan.Printf("Compiling Binary: %s\n", binary.name)
+
 	if buildDependencies(binary.staticLibs, allLibs) == false {
 		return false
 	}
@@ -83,7 +90,7 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 		binary.staticLibs, allLibs)
 
 	if objSuccess == false {
-		fmt.Printf("Build Binary: %s FAILED\n", binary.name)
+		boldRed.Printf("Build Binary: %s FAILED\n\n", binary.name)
 		return false
 	}
 
@@ -106,7 +113,7 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("Binary: %s | Error: %s\n", binary.name, fmt.Sprint(err))
+		boldGreen.Printf("Binary: %s | Error: %s\n", binary.name, fmt.Sprint(err))
 		fmt.Printf("Out: %s\n\n", out)
 		return false
 	}
@@ -119,6 +126,8 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 	if staticLib.isBuilt == false {
 
+		boldCyan.Printf("Compiling StaticLib: %s\n", staticLib.name)
+
 		linkPaths, linkNames, linkIncludes := getStaticLibsLinks(staticLib.staticLibs, allLibs, staticLib.name)
 
 		if buildDependencies(staticLib.staticLibs, allLibs) == false {
@@ -130,7 +139,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 			staticLib.folderInfos, staticLib.staticLibs, allLibs)
 
 		if objSuccess == false {
-			fmt.Printf("Build StaticLib: %s FAILED\n", staticLib.name)
+			boldRed.Printf("Build StaticLib: %s FAILED\n\n", staticLib.name)
 			return false
 		}
 
@@ -154,7 +163,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 		cmd := exec.Command("ar", args...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			fmt.Printf("StaticLib: %s | Error: %s\n", staticLib.name, fmt.Sprint(err))
+			boldRed.Printf("StaticLib: %s | Error: %s\n", staticLib.name, fmt.Sprint(err))
 			fmt.Printf("Out: %s\n\n", out)
 			return false
 		}
@@ -176,6 +185,8 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 
+	boldCyan.Printf("Compiling Plugin: %s\n", plugin.name)
+
 	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(plugin.staticLibs, allLibs, "")
 
 	if buildDependencies(plugin.staticLibs, allLibs) == false {
@@ -186,7 +197,7 @@ func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 		plugin.staticLibs, allLibs)
 
 	if objSuccess == false {
-		fmt.Printf("Build Plugin: %s FAILED\n", plugin.name)
+		boldRed.Printf("Build Plugin: %s FAILED\n\n", plugin.name)
 		return false
 	}
 
@@ -206,7 +217,16 @@ func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 
 	fmt.Printf("Handle Plugin args: %v\n", args)
 
-	executeCommandWithPrintErr(toolchain, args)
+	//executeCommandWithPrintErr(toolchain, args)
+
+	cmd := exec.Command(toolchain, args...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		boldRed.Printf("Plugin: %s | Error: %s\n", plugin.name, fmt.Sprint(err))
+		fmt.Printf("Out: %s\n\n", out)
+		return false
+	}
+	fmt.Printf("Out: %s\n\n", out)
 	/*
 		out, err := exec.Command(toolchain, args...).Output()
 
@@ -279,13 +299,14 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 	} else {
 		toolchain = DEFAULT_TOOLCHAIN
 	}
-	fmt.Printf("OsType: %s | Toolchain: %s\n", obakeRootFileObj.Builder.Os, toolchain)
+	boldRed.Printf("Volund: OsType: %s | Toolchain: %s\n", obakeRootFileObj.Builder.Os, toolchain)
 	//	fmt.Printf("SubFilesNB: %d\n", len(subFiles))
 
 	if osType != UNKNOWN {
 		for _, buildFolder := range subFiles {
 
-			fmt.Printf("ReadFile: %s\n", "./"+buildFolder.name+"/"+OBAKE_BS_FILENAME)
+			boldGreen.Print("ReadFile: ")
+			fmt.Printf("%s\n", "./"+buildFolder.name+"/"+OBAKE_BS_FILENAME)
 			buildFolder.obakeBuildFile, _ = ioutil.ReadFile("./" + buildFolder.name + "/" + OBAKE_BS_FILENAME)
 			obakeCurrentFile := getBuildFileJSONObj(buildFolder)
 
@@ -328,6 +349,8 @@ func main() {
 	var subOBSFile []byte
 
 	// argsWithProg = os.Args[1:]
+
+	initCustomColors()
 
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
