@@ -43,9 +43,10 @@ func buildAndGetObjectFiles(sourceFilesPath []string, sourceFiles []string,
 		boldCyan.Printf("[%d/%d] ObjFile: ", (i + 1), len(sourceFiles))
 		fmt.Printf("%s %v\n", toolchain, args)
 		cmd := exec.Command(toolchain, args...)
-		_, err := cmd.CombinedOutput()
+		out, err := cmd.CombinedOutput()
 		if err != nil {
-			boldRed.Printf("ObjFile: %s | Error: %s\n", srcFilePath, fmt.Sprint(err))
+			boldRed.Printf("ObjFile: %s | Error: %s:\n\n", srcFilePath, fmt.Sprint(err))
+			fmt.Printf("%s\n", string(out))
 			//fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, fmt.Sprint(err))
 			success = false
 			return
@@ -114,11 +115,11 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		boldGreen.Printf("Binary: %s | Error: %s\n", binary.name, fmt.Sprint(err))
-		fmt.Printf("Out: %s\n\n", out)
+		boldGreen.Printf("Binary: %s | Error: %s\n\n", binary.name, fmt.Sprint(err))
+		fmt.Printf("%s\n", string(out))
 		return false
 	}
-	fmt.Printf("Out: %s\n\n", out)
+	fmt.Printf("%s\n\n", out)
 
 	return true
 }
@@ -164,11 +165,11 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 		cmd := exec.Command("ar", args...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			boldRed.Printf("StaticLib: %s | Error: %s\n", staticLib.name, fmt.Sprint(err))
-			fmt.Printf("Out: %s\n\n", out)
+			boldRed.Printf("StaticLib: %s | Error: %s\n\n", staticLib.name, fmt.Sprint(err))
+			fmt.Printf("%s\n", string(out))
 			return false
 		}
-		fmt.Printf("Out: %s\n\n", out)
+		fmt.Printf("%s\n\n", out)
 
 		/*out, err := exec.Command("ar", args...).Output()
 
@@ -223,7 +224,7 @@ func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		boldRed.Printf("Plugin: %s | Error: %s\n", plugin.name, fmt.Sprint(err))
+		boldRed.Printf("Plugin: %s | Error: %s\n\n", plugin.name, fmt.Sprint(err.Error()))
 		fmt.Printf("Out: %s\n\n", out)
 		return false
 	}
