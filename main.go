@@ -20,6 +20,7 @@ func buildAndGetObjectFiles(sourceFilesPath []string, sourceFiles []string,
 		oFilePath := outFolder + "/" + strings.Replace(sourceFiles[i], extension, ".o", -1)
 		objectFilesPath = append(objectFilesPath, oFilePath)
 
+		//		fmt.Printf("SrcFilePath: %s\n", srcFilePath)
 		args := []string{"-c", folderInfos.path + "/" + srcFilePath, "-o", oFilePath}
 		args = append(args, compilerFlags...)
 
@@ -39,7 +40,7 @@ func buildAndGetObjectFiles(sourceFilesPath []string, sourceFiles []string,
 		args = append(args, getExternIncludesArgs(externIncludes)...)
 		args = append(args, getExternLibsArgs(externLibs)...)
 
-		boldYellow.Print("ObjFile: ")
+		boldCyan.Printf("[%d/%d] ObjFile: ", (i + 1), len(sourceFiles))
 		fmt.Printf("%s %v\n", toolchain, args)
 		cmd := exec.Command(toolchain, args...)
 		_, err := cmd.CombinedOutput()
@@ -79,7 +80,7 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 
 	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(binary.staticLibs, allLibs, binary.name)
 
-	boldCyan.Printf("Compiling Binary: %s\n", binary.name)
+	boldCyan.Printf("(%d files) Compiling Binary: %s\n", len(binary.sources), binary.name)
 
 	if buildDependencies(binary.staticLibs, allLibs) == false {
 		return false
@@ -126,7 +127,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 	if staticLib.isBuilt == false {
 
-		boldCyan.Printf("Compiling StaticLib: %s\n", staticLib.name)
+		boldCyan.Printf("(%d files) Compiling StaticLib: %s\n", len(staticLib.sources), staticLib.name)
 
 		linkPaths, linkNames, linkIncludes := getStaticLibsLinks(staticLib.staticLibs, allLibs, staticLib.name)
 
@@ -185,7 +186,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 
-	boldCyan.Printf("Compiling Plugin: %s\n", plugin.name)
+	boldCyan.Printf("(%d files) Compiling Plugin: %s\n", len(plugin.sources), plugin.name)
 
 	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(plugin.staticLibs, allLibs, "")
 

@@ -77,7 +77,7 @@ func makeStaticLibType(folderInfos ObakeBuildFolder) *StaticLibType {
 		os.MkdirAll(staticLib.outFolder, os.ModePerm)
 	}
 
-	staticLib.sources, staticLib.sourceFileNames = getSourceFiles(jsonObj.StaticLib.SrcFolders, jsonObj.StaticLib.SrcExtension, folderInfos)
+	staticLib.sourceFileNames, staticLib.sources = getSourceFiles(jsonObj.StaticLib.SrcFolders, jsonObj.StaticLib.SrcExtension, folderInfos)
 
 	return staticLib
 }
@@ -100,7 +100,7 @@ func makePluginType(folderInfos ObakeBuildFolder) *PluginType {
 		os.MkdirAll(plugin.outFolder, os.ModePerm)
 	}
 
-	plugin.sources, plugin.sourceFileNames = getSourceFiles(jsonObj.Plugin.SrcFolders, jsonObj.Plugin.SrcExtension, folderInfos)
+	plugin.sourceFileNames, plugin.sources = getSourceFiles(jsonObj.Plugin.SrcFolders, jsonObj.Plugin.SrcExtension, folderInfos)
 
 	return plugin
 }
@@ -124,7 +124,7 @@ func makeBinaryType(folderInfos ObakeBuildFolder, outBinary string) *BinaryType 
 		os.MkdirAll(binary.outFolder, os.ModePerm)
 	}
 
-	binary.sources, binary.sourceFileNames = getSourceFiles(jsonObj.Binary.SrcFolders, jsonObj.Binary.SrcExtension, folderInfos)
+	binary.sourceFileNames, binary.sources = getSourceFiles(jsonObj.Binary.SrcFolders, jsonObj.Binary.SrcExtension, folderInfos)
 
 	return binary
 }
