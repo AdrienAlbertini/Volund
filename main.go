@@ -41,7 +41,8 @@ func buildAndGetObjectFiles(sourceFilesPath []string, sourceFiles []string,
 		args = append(args, getExternLibsArgs(externLibs)...)
 
 		boldCyan.Printf("[%d/%d] ObjFile: ", (i + 1), len(sourceFiles))
-		fmt.Printf("%s %v\n", toolchain, args)
+		boldBlue.Printf("%s ", toolchain)
+		fmt.Printf("%v\n", args)
 		cmd := exec.Command(toolchain, args...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -247,7 +248,7 @@ func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
 	var outBinary *BinaryType
 
 	for _, binary := range binaries {
-		if binary.isOutBinary == true {
+		if contains(builder.Binaries, binary.name) && binary.isOutBinary == true {
 			outBinary = binary
 			outBinaryFound = true
 			break
@@ -255,6 +256,7 @@ func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
 	}
 
 	if outBinaryFound == false {
+		boldYellow.Printf("Out Binary not found\n")
 		return false
 	}
 
@@ -271,6 +273,7 @@ func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
 		os.MkdirAll(builder.OutFolder+"/Plugins", os.ModePerm)
 	}
 
+	boldCyan.Printf("Copying binary files.\n")
 	copy(outBinary.outFolder+"/"+outBinary.name+binaryExtension, builder.OutFolder+"/"+outBinary.name+binaryExtension)
 
 	for _, plugin := range plugins {
@@ -325,17 +328,17 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 		}
 		fmt.Printf("\n")
 		for i, staticType := range staticLibs {
-			if handleStatic(staticType, staticLibs) == false {
+			if contains(obakeRootFileObj.Builder.StaticLibs, staticType.name) && handleStatic(staticType, staticLibs) == false {
 				staticLibs = append(staticLibs[:i], staticLibs[:i+1]...)
 			}
 		}
 		for i, pluginType := range plugins {
-			if handlePlugin(pluginType, staticLibs) == false {
+			if contains(obakeRootFileObj.Builder.Plugins, pluginType.name) && handlePlugin(pluginType, staticLibs) == false {
 				plugins = append(plugins[:i], plugins[:i+1]...)
 			}
 		}
 		for i, binaryType := range binaries {
-			if handleBinary(binaryType, staticLibs) == false {
+			if contains(obakeRootFileObj.Builder.Binaries, binaryType.name) && handleBinary(binaryType, staticLibs) == false {
 				binaries = append(binaries[:i], binaries[:i+1]...)
 			}
 		}

@@ -3,11 +3,11 @@
    {
      "OS": "Windows",
      "toolchain": "clang++",
-     "binary": "",
-     "outBinary": "Volund",
-     "staticLibs": [],
-     "plugins": [],
-     "pluginsFolder": "Plugins",
+     "binaries": ["SimpleBinaryExample"],
+     "staticLibs": ["StaticLibExample"],
+     "plugins": ["PluginExample"],
+     "outBinary": "OutBinaryExample",
+     "outPluginsFolder": "Plugins",
      "compilerFlags": ["-fms-compatibility-version=19.00"],
      "outFolder": "Bin"
    }

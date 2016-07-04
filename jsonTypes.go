@@ -48,7 +48,7 @@ type BuilderJSON struct {
 	Binaries      []string `json:"binaries"`
 	StaticLibs    []string `json:"staticLibs"`
 	Plugins       []string `json:"plugins"`
-	PluginsFolder string   `json:"pluginsFolder"`
+	PluginsFolder string   `json:"outPluginsFolder"`
 	OutFolder     string   `json:"outFolder"`
 	CompilerFlags []string `json:"compilerFlags"`
 }
