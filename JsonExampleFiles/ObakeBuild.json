@@ -1,0 +1,14 @@
+{
+   "Builder":
+   {
+     "OS": "Windows",
+     "toolchain": "clang++",
+     "binary": "",
+     "outBinary": "Volund",
+     "staticLibs": [],
+     "plugins": [],
+     "pluginsFolder": "Plugins",
+     "compilerFlags": ["-fms-compatibility-version=19.00"],
+     "outFolder": "Bin"
+   }
+}

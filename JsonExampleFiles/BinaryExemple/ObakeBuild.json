@@ -1,0 +1,12 @@
+{
+  "Binary":
+   {
+     "name": "BinaryExemple",
+     "srcFolders": ["."],
+     "staticLibs": ["StaticLibExemple"],
+     "srcExtension": ".cpp",
+     "headersFolders": ["."],
+     "externIncludes": [],
+     "outFolder": "Bin"
+   }
+}

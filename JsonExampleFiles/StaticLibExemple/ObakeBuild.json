@@ -1,0 +1,10 @@
+{
+  "StaticLib":
+   {
+     "name": "StaticLibExemple",
+     "srcFolders": ["."],
+     "srcExtension": ".cpp",
+     "headersFolders": ["."],
+     "outFolder": "Bin"
+   }
+}

@@ -1,0 +1,12 @@
+{
+  "Plugin":
+   {
+     "name": "Plugin",
+     "srcFolders": ["."],
+     "staticLibs": ["StaticLib"],
+     "srcExtension": ".cpp",
+     "headersFolders": ["."],
+     "externIncludes": [],
+     "outFolder": "Bin"
+   }
+}
