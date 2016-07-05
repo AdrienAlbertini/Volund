@@ -108,9 +108,6 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 		args = append(args, getExternLibsArgs(staticLib.externLibs)...)
 
 		fmt.Printf("Handle Static args: %v\n", args)
-
-		//	executeCommandWithPrintErr("ar", args)
-
 		cmd := exec.Command("ar", args...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -120,15 +117,6 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 		}
 		fmt.Printf("%s\n\n", out)
 
-		/*out, err := exec.Command("ar", args...).Output()
-
-		if err != nil {
-			fmt.Printf("StaticLib: %s | Error: %s\n\n", staticLib.name, err)
-			return false
-		} else {
-			fmt.Printf("Out: %s\n\n", out)
-		}
-		*/
 		staticLib.isBuilt = true
 	}
 	return true
@@ -165,12 +153,9 @@ func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 	args = append(args, linkNames...)
 	args = append(args, plugin.compilerFlags...)
 
-	//	args = append(args, getExternIncludesArgs(plugin.externIncludes)...)
 	args = append(args, getExternLibsArgs(plugin.externLibs)...)
 
 	fmt.Printf("Handle Plugin args: %v\n", args)
-
-	//executeCommandWithPrintErr(toolchain, args)
 
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
@@ -180,15 +165,7 @@ func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 		return false
 	}
 	fmt.Printf("Out: %s\n\n", out)
-	/*
-		out, err := exec.Command(toolchain, args...).Output()
 
-		if err != nil {
-			fmt.Printf("PluginLib: %s | Error: %s\n\n", plugin.name, err)
-			return false
-		}
-		fmt.Printf("Out: %s\n\n", out)
-	*/
 	return true
 }
 
@@ -254,6 +231,11 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 	compilerFlags = obakeRootFileObj.Builder.CompilerFlags
 	if contains(obakeRootFileObj.Builder.Binaries, obakeRootFileObj.Builder.OutBinary) == false {
 		obakeRootFileObj.Builder.Binaries = append(obakeRootFileObj.Builder.Binaries, obakeRootFileObj.Builder.OutBinary)
+	}
+
+	if obakeRootFileObj.Builder.FullStatic {
+		obakeRootFileObj.Builder.StaticLibs = append(obakeRootFileObj.Builder.StaticLibs, obakeRootFileObj.Builder.Plugins...)
+		obakeRootFileObj.Builder.Plugins = []string{}
 	}
 
 	if isValidToolchain(obakeRootFileObj.Builder.Toolchain) {

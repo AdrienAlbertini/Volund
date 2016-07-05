@@ -1,10 +1,23 @@
 package main
 
 type ObjectJSON struct {
+	Builder   BuilderJSON   `json:"Builder"`
 	Binary    BinaryJSON    `json:"Binary"`
 	StaticLib StaticLibJSON `json:"StaticLib"`
 	Plugin    PluginJSON    `json:"Plugin"`
-	Builder   BuilderJSON   `json:"Builder"`
+}
+
+type BuilderJSON struct {
+	Os            string   `json:"OS"`
+	Toolchain     string   `json:"toolchain"`
+	OutBinary     string   `json:"outBinary"`
+	Binaries      []string `json:"binaries"`
+	StaticLibs    []string `json:"staticLibs"`
+	Plugins       []string `json:"plugins"`
+	PluginsFolder string   `json:"outPluginsFolder"`
+	OutFolder     string   `json:"outFolder"`
+	CompilerFlags []string `json:"compilerFlags"`
+	FullStatic    bool     `json:"fullStatic"`
 }
 
 type BinaryJSON struct {
@@ -42,17 +55,4 @@ type PluginJSON struct {
 	ExternLibs     []string `json:"externLibs"`
 	OutFolder      string   `json:"outFolder"`
 	CompilerFlags  []string `json:"compilerFlags"`
-}
-
-type BuilderJSON struct {
-	Os            string   `json:"OS"`
-	Toolchain     string   `json:"toolchain"`
-	OutBinary     string   `json:"outBinary"`
-	Binaries      []string `json:"binaries"`
-	StaticLibs    []string `json:"staticLibs"`
-	Plugins       []string `json:"plugins"`
-	PluginsFolder string   `json:"outPluginsFolder"`
-	OutFolder     string   `json:"outFolder"`
-	CompilerFlags []string `json:"compilerFlags"`
-	FullStatic    bool     `json:"fullStatic"`
 }
