@@ -227,11 +227,15 @@ func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
 	copy(outBinary.outFolder+"/"+outBinary.name+binaryExtension, builder.OutFolder+"/"+outBinary.name+binaryExtension)
 
 	for _, plugin := range plugins {
-		copy(plugin.outFolder+"/"+plugin.name+pluginExtension, builder.OutFolder+"/Plugins/"+plugin.name+pluginExtension)
+		if contains(builder.Plugins, plugin.name) {
+			copy(plugin.outFolder+"/"+plugin.name+pluginExtension, builder.OutFolder+"/Plugins/"+plugin.name+pluginExtension)
+		}
 	}
 
 	for _, lib := range staticLibs {
-		copy(lib.outFolder+"/"+lib.name+staticExtension, builder.OutFolder+lib.name+staticExtension)
+		if contains(builder.StaticLibs, lib.name) {
+			copy(lib.outFolder+"/"+lib.name+staticExtension, builder.OutFolder+lib.name+staticExtension)
+		}
 	}
 
 	return true
@@ -248,6 +252,9 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 
 	osType = getOsType(obakeRootFileObj.Builder.Os)
 	compilerFlags = obakeRootFileObj.Builder.CompilerFlags
+	if contains(obakeRootFileObj.Builder.Binaries, obakeRootFileObj.Builder.OutBinary) == false {
+		obakeRootFileObj.Builder.Binaries = append(obakeRootFileObj.Builder.Binaries, obakeRootFileObj.Builder.OutBinary)
+	}
 
 	if isValidToolchain(obakeRootFileObj.Builder.Toolchain) {
 		toolchain = obakeRootFileObj.Builder.Toolchain
@@ -278,17 +285,17 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 		}
 		fmt.Printf("\n")
 		for i, staticType := range staticLibs {
-			if contains(obakeRootFileObj.Builder.StaticLibs, staticType.name) && handleStatic(staticType, staticLibs) == false {
+			if contains(obakeRootFileObj.Builder.StaticLibs, staticType.name) == false || handleStatic(staticType, staticLibs) == false {
 				staticLibs = append(staticLibs[:i], staticLibs[:i+1]...)
 			}
 		}
 		for i, pluginType := range plugins {
-			if contains(obakeRootFileObj.Builder.Plugins, pluginType.name) && handlePlugin(pluginType, staticLibs) == false {
+			if contains(obakeRootFileObj.Builder.Plugins, pluginType.name) == false || handlePlugin(pluginType, staticLibs) == false {
 				plugins = append(plugins[:i], plugins[:i+1]...)
 			}
 		}
 		for i, binaryType := range binaries {
-			if contains(obakeRootFileObj.Builder.Binaries, binaryType.name) && handleBinary(binaryType, staticLibs) == false {
+			if contains(obakeRootFileObj.Builder.Binaries, binaryType.name) == false || handleBinary(binaryType, staticLibs) == false {
 				binaries = append(binaries[:i], binaries[:i+1]...)
 			}
 		}

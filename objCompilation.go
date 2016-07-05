@@ -166,6 +166,7 @@ func buildAndGetObjectFiles(objType ObjFileRequirement, success *bool,
 		<-objCompleteChan
 	}
 
-	bar.FinishPrint("")
+	bar.Finish()
+	fmt.Printf("\n")
 	*success = true
 }
