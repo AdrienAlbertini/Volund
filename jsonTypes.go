@@ -54,4 +54,5 @@ type BuilderJSON struct {
 	PluginsFolder string   `json:"outPluginsFolder"`
 	OutFolder     string   `json:"outFolder"`
 	CompilerFlags []string `json:"compilerFlags"`
+	FullStatic    bool     `json:"fullStatic"`
 }
