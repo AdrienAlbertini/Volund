@@ -17,6 +17,7 @@ type BinaryJSON struct {
 	ExternIncludes []string `json:"externIncludes"`
 	ExternLibs     []string `json:"externLibs"`
 	OutFolder      string   `json:"outFolder"`
+	CompilerFlags  []string `json:"compilerFlags"`
 }
 
 type StaticLibJSON struct {
@@ -28,6 +29,7 @@ type StaticLibJSON struct {
 	ExternIncludes []string `json:"externIncludes"`
 	ExternLibs     []string `json:"externLibs"`
 	OutFolder      string   `json:"outFolder"`
+	CompilerFlags  []string `json:"compilerFlags"`
 }
 
 type PluginJSON struct {
@@ -39,6 +41,7 @@ type PluginJSON struct {
 	ExternIncludes []string `json:"externIncludes"`
 	ExternLibs     []string `json:"externLibs"`
 	OutFolder      string   `json:"outFolder"`
+	CompilerFlags  []string `json:"compilerFlags"`
 }
 
 type BuilderJSON struct {

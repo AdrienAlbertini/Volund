@@ -15,6 +15,7 @@ type BinaryType struct {
 	headerFolders   []string
 	externIncludes  []string
 	externLibs      []string
+	compilerFlags   []string
 	outFolder       string
 	isOutBinary     bool
 }
@@ -30,6 +31,7 @@ type StaticLibType struct {
 	headerFolders   []string
 	externIncludes  []string
 	externLibs      []string
+	compilerFlags   []string
 	outFolder       string
 	isBuilt         bool
 }
@@ -45,6 +47,7 @@ type PluginType struct {
 	headerFolders   []string
 	externIncludes  []string
 	externLibs      []string
+	compilerFlags   []string
 	outFolder       string
 }
 
@@ -70,6 +73,7 @@ func makeStaticLibType(folderInfos ObakeBuildFolder) *StaticLibType {
 	staticLib.sourceExtension = jsonObj.StaticLib.SrcExtension
 	staticLib.externIncludes = jsonObj.StaticLib.ExternIncludes
 	staticLib.externLibs = jsonObj.StaticLib.ExternLibs
+	staticLib.compilerFlags = jsonObj.StaticLib.CompilerFlags
 	staticLib.isBuilt = false
 
 	success, _ := exists(staticLib.outFolder)
@@ -94,6 +98,7 @@ func makePluginType(folderInfos ObakeBuildFolder) *PluginType {
 	plugin.sourceExtension = jsonObj.Plugin.SrcExtension
 	plugin.externIncludes = jsonObj.Plugin.ExternIncludes
 	plugin.externLibs = jsonObj.Plugin.ExternLibs
+	plugin.compilerFlags = jsonObj.Plugin.CompilerFlags
 
 	success, _ := exists(plugin.outFolder)
 	if !success {
@@ -118,6 +123,7 @@ func makeBinaryType(folderInfos ObakeBuildFolder, outBinary string) *BinaryType 
 	binary.sourceExtension = jsonObj.Binary.SrcExtension
 	binary.externIncludes = jsonObj.Binary.ExternIncludes
 	binary.externLibs = jsonObj.Binary.ExternLibs
+	binary.compilerFlags = jsonObj.Binary.CompilerFlags
 
 	success, _ := exists(binary.outFolder)
 	if !success {

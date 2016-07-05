@@ -3,66 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	//	"github.com/fatih/color"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 )
-
-func buildAndGetObjectFiles(sourceFilesPath []string, sourceFiles []string,
-	headersFolders []string, externIncludes []string,
-	externLibs []string, extension string,
-	outFolder string, folderInfos ObakeBuildFolder,
-	staticLibs []string, allLibs []*StaticLibType) (success bool, objectFilesPath []string) {
-	for i, srcFilePath := range sourceFilesPath {
-		oFilePath := outFolder + "/" + strings.Replace(sourceFiles[i], extension, ".o", -1)
-		objectFilesPath = append(objectFilesPath, oFilePath)
-
-		//		fmt.Printf("SrcFilePath: %s\n", srcFilePath)
-		args := []string{"-c", folderInfos.path + "/" + srcFilePath, "-o", oFilePath}
-		args = append(args, compilerFlags...)
-
-		for _, headerFolder := range headersFolders {
-			if headerFolder == "." {
-				args = append(args, "-I"+folderInfos.path+"/")
-			} else {
-				args = append(args, "-I"+folderInfos.path+"/"+headerFolder+"/")
-			}
-		}
-
-		_, linkNames, linkIncludes := getStaticLibsLinks(staticLibs, allLibs, folderInfos.name)
-
-		args = append(args, linkIncludes...)
-		args = append(args, linkNames...)
-
-		args = append(args, getExternIncludesArgs(externIncludes)...)
-		args = append(args, getExternLibsArgs(externLibs)...)
-
-		boldCyan.Printf("[%d/%d] ObjFile: ", (i + 1), len(sourceFiles))
-		boldBlue.Printf("%s ", toolchain)
-		fmt.Printf("%v\n", args)
-		cmd := exec.Command(toolchain, args...)
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			boldRed.Printf("ObjFile: %s | Error: %s:\n\n", srcFilePath, fmt.Sprint(err))
-			fmt.Printf("%s\n", string(out))
-			//fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, fmt.Sprint(err))
-			success = false
-			return
-		}
-		/*
-			fmt.Printf("Obj files: %s %v\n", toolchain, args)
-			_, err := exec.Command(toolchain, args...).Output()
-			if err != nil {
-				fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, err)
-			}
-		*/
-	}
-	success = true
-	return
-}
 
 func buildDependencies(staticLibs []string, allLibs []*StaticLibType) bool {
 
@@ -88,9 +33,9 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 		return false
 	}
 
-	objSuccess, objectFilesPath := buildAndGetObjectFiles(binary.sources, binary.sourceFileNames, binary.headerFolders,
-		binary.externIncludes, binary.externLibs, binary.sourceExtension, binary.outFolder, binary.folderInfos,
-		binary.staticLibs, allLibs)
+	var objSuccess bool
+	var objectFilesPath []string
+	buildAndGetObjectFiles(binaryTypeToObjType(*binary, binary.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 	if objSuccess == false {
 		boldRed.Printf("Build Binary: %s FAILED\n\n", binary.name)
@@ -107,6 +52,7 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 	args = append(args, linkIncludes...)
 	args = append(args, linkPaths...)
 	args = append(args, linkNames...)
+	args = append(args, binary.compilerFlags...)
 
 	//args = append(args, getExternIncludesArgs(binary.externIncludes)...)
 	args = append(args, getExternLibsArgs(binary.externLibs)...)
@@ -137,9 +83,9 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 			return false
 		}
 
-		objSuccess, objectFilesPath := buildAndGetObjectFiles(staticLib.sources, staticLib.sourceFileNames, staticLib.headerFolders,
-			staticLib.externIncludes, staticLib.externLibs, staticLib.sourceExtension, staticLib.outFolder,
-			staticLib.folderInfos, staticLib.staticLibs, allLibs)
+		var objSuccess bool
+		var objectFilesPath []string
+		buildAndGetObjectFiles(staticLibTypeToObjType(*staticLib, staticLib.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 		if objSuccess == false {
 			boldRed.Printf("Build StaticLib: %s FAILED\n\n", staticLib.name)
@@ -155,6 +101,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 		args = append(args, linkIncludes...)
 		args = append(args, linkPaths...)
 		args = append(args, linkNames...)
+		args = append(args, staticLib.compilerFlags...)
 
 		//	args = append(args, getExternIncludesArgs(staticLib.externIncludes)...)
 		args = append(args, getExternLibsArgs(staticLib.externLibs)...)
@@ -195,9 +142,10 @@ func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 	if buildDependencies(plugin.staticLibs, allLibs) == false {
 		return false
 	}
-	objSuccess, objectFilesPath := buildAndGetObjectFiles(plugin.sources, plugin.sourceFileNames, plugin.headerFolders,
-		plugin.externIncludes, plugin.externLibs, plugin.sourceExtension, plugin.outFolder, plugin.folderInfos,
-		plugin.staticLibs, allLibs)
+
+	var objSuccess bool
+	var objectFilesPath []string
+	buildAndGetObjectFiles(pluginTypeToObjType(*plugin, plugin.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 	if objSuccess == false {
 		boldRed.Printf("Build Plugin: %s FAILED\n\n", plugin.name)
@@ -214,6 +162,7 @@ func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 	args = append(args, linkIncludes...)
 	args = append(args, linkPaths...)
 	args = append(args, linkNames...)
+	args = append(args, plugin.compilerFlags...)
 
 	//	args = append(args, getExternIncludesArgs(plugin.externIncludes)...)
 	args = append(args, getExternLibsArgs(plugin.externLibs)...)
