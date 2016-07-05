@@ -24,20 +24,20 @@ type ObjFileRequirement struct {
 	outFolder       string
 }
 
-func pluginTypeToObjType(plugin PluginType, folderInfos ObakeBuildFolder,
+func sharedLibTypeToObjType(sharedLib SharedLibType, folderInfos ObakeBuildFolder,
 	allLibs *[]*StaticLibType) (objType ObjFileRequirement) {
 
 	objType.folderInfos = folderInfos
 	objType.allLibs = allLibs
-	objType.sourceFilesPath = plugin.sources
-	objType.sourceFiles = plugin.sourceFileNames
-	objType.headersFolders = plugin.headerFolders
-	objType.externIncludes = plugin.externIncludes
-	objType.externLibs = plugin.externLibs
-	objType.staticLibs = plugin.staticLibs
-	objType.sourceExtension = plugin.sourceExtension
-	objType.outFolder = plugin.outFolder
-	objType.compilerFlags = plugin.compilerFlags
+	objType.sourceFilesPath = sharedLib.sources
+	objType.sourceFiles = sharedLib.sourceFileNames
+	objType.headersFolders = sharedLib.headerFolders
+	objType.externIncludes = sharedLib.externIncludes
+	objType.externLibs = sharedLib.externLibs
+	objType.staticLibs = sharedLib.staticLibs
+	objType.sourceExtension = sharedLib.sourceExtension
+	objType.outFolder = sharedLib.outFolder
+	objType.compilerFlags = sharedLib.compilerFlags
 
 	return
 }
@@ -110,9 +110,9 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		mutex.Lock()
+		bar.Finish()
 		boldRed.Printf("ObjFile: %s | Error: %s:\n\n", srcFilePath, fmt.Sprint(err))
 		fmt.Printf("%s\n", string(out))
-		bar.Finish()
 		mutex.Unlock()
 		//fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, fmt.Sprint(err))
 		*success = false

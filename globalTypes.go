@@ -10,7 +10,7 @@ const DEFAULT_TOOLCHAIN string = "clang++"
 const (
 	BINARY ObakeBuildType = iota
 	STATIC_LIB
-	PLUGIN
+	SHARED_LIB
 	Builder
 	NONE
 )

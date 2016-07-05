@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"reflect"
 )
 
 type BinaryType struct {
@@ -9,7 +10,7 @@ type BinaryType struct {
 	name            string
 	sourceExtension string
 	staticLibs      []string
-	plugins         []string
+	sharedLibs      []string
 	sources         []string
 	sourceFileNames []string
 	headerFolders   []string
@@ -25,7 +26,7 @@ type StaticLibType struct {
 	name            string
 	sourceExtension string
 	staticLibs      []string
-	plugins         []string
+	sharedLibs      []string
 	sources         []string
 	sourceFileNames []string
 	headerFolders   []string
@@ -36,12 +37,12 @@ type StaticLibType struct {
 	isBuilt         bool
 }
 
-type PluginType struct {
+type SharedLibType struct {
 	folderInfos     ObakeBuildFolder
 	name            string
 	sourceExtension string
 	staticLibs      []string
-	plugins         []string
+	sharedLibs      []string
 	sources         []string
 	sourceFileNames []string
 	headerFolders   []string
@@ -52,28 +53,68 @@ type PluginType struct {
 }
 
 type BuilderType struct {
-	os            ObakeOSType
-	outBinary     BinaryType
-	binaries      []BinaryType
-	staticLibs    []StaticLibType
-	plugins       []PluginType
-	pluginsFolder string
-	outFolder     string
+	os               ObakeOSType
+	outBinary        BinaryType
+	binaries         []BinaryType
+	staticLibs       []StaticLibType
+	sharedLibs       []SharedLibType
+	sharedLibsFolder string
+	outFolder        string
+}
+
+func (s OSSpecificParamsJSON) IsEmpty() bool {
+	return reflect.DeepEqual(s, OSSpecificParamsJSON{})
+}
+
+func resolveOSParams(jsonObj CommonBuildJSON) (resolvedJson CommonBuildJSON) {
+	var resolveJsonObj OSSpecificParamsJSON
+
+	resolvedJson = jsonObj
+	switch osType {
+	case WINDOWS:
+		if jsonObj.Windows.IsEmpty() {
+			return
+		}
+		resolveJsonObj = jsonObj.Windows
+	case LINUX:
+		if jsonObj.Linux.IsEmpty() {
+			return
+		}
+		resolveJsonObj = jsonObj.Linux
+	case OSX:
+		if jsonObj.OSX.IsEmpty() {
+			return
+		}
+		resolveJsonObj = jsonObj.OSX
+	}
+
+	resolvedJson.Name = returnDefaultIfEmpty(resolveJsonObj.Name, jsonObj.Name)
+	resolvedJson.SrcExtension = returnDefaultIfEmpty(resolveJsonObj.SrcExtension, jsonObj.SrcExtension)
+	resolvedJson.OutFolder = returnDefaultIfEmpty(resolveJsonObj.OutFolder, jsonObj.OutFolder)
+	resolvedJson.StaticLibs = append(jsonObj.StaticLibs, resolveJsonObj.StaticLibs...)
+	resolvedJson.SharedLibs = append(jsonObj.SharedLibs, resolveJsonObj.SharedLibs...)
+	resolvedJson.SrcFolders = append(jsonObj.SrcFolders, resolveJsonObj.SrcFolders...)
+	resolvedJson.HeadersFolders = append(jsonObj.HeadersFolders, resolveJsonObj.HeadersFolders...)
+	resolvedJson.ExternIncludes = append(jsonObj.ExternIncludes, resolveJsonObj.ExternIncludes...)
+	resolvedJson.ExternLibs = append(jsonObj.ExternLibs, resolveJsonObj.ExternLibs...)
+	resolvedJson.CompilerFlags = append(jsonObj.CompilerFlags, resolveJsonObj.CompilerFlags...)
+	return
 }
 
 func makeStaticLibType(folderInfos ObakeBuildFolder) *StaticLibType {
 	staticLib := new(StaticLibType)
 	jsonObj := getBuildFileJSONObj(folderInfos)
 
+	commonBuildObj := resolveOSParams(jsonObj.StaticLib)
 	staticLib.folderInfos = folderInfos
-	staticLib.name = jsonObj.StaticLib.Name
-	staticLib.outFolder = staticLib.folderInfos.path + "/" + jsonObj.StaticLib.OutFolder
-	staticLib.staticLibs = jsonObj.StaticLib.StaticLibs
-	staticLib.headerFolders = jsonObj.StaticLib.HeadersFolders
-	staticLib.sourceExtension = jsonObj.StaticLib.SrcExtension
-	staticLib.externIncludes = jsonObj.StaticLib.ExternIncludes
-	staticLib.externLibs = jsonObj.StaticLib.ExternLibs
-	staticLib.compilerFlags = jsonObj.StaticLib.CompilerFlags
+	staticLib.name = commonBuildObj.Name
+	staticLib.outFolder = staticLib.folderInfos.path + "/" + commonBuildObj.OutFolder
+	staticLib.staticLibs = commonBuildObj.StaticLibs
+	staticLib.headerFolders = commonBuildObj.HeadersFolders
+	staticLib.sourceExtension = commonBuildObj.SrcExtension
+	staticLib.externIncludes = commonBuildObj.ExternIncludes
+	staticLib.externLibs = commonBuildObj.ExternLibs
+	staticLib.compilerFlags = commonBuildObj.CompilerFlags
 	staticLib.isBuilt = false
 
 	success, _ := exists(staticLib.outFolder)
@@ -81,57 +122,59 @@ func makeStaticLibType(folderInfos ObakeBuildFolder) *StaticLibType {
 		os.MkdirAll(staticLib.outFolder, os.ModePerm)
 	}
 
-	staticLib.sourceFileNames, staticLib.sources = getSourceFiles(jsonObj.StaticLib.SrcFolders, jsonObj.StaticLib.SrcExtension, folderInfos)
+	staticLib.sourceFileNames, staticLib.sources = getSourceFiles(commonBuildObj.SrcFolders, commonBuildObj.SrcExtension, folderInfos)
 
 	return staticLib
 }
 
-func makePluginType(folderInfos ObakeBuildFolder) *PluginType {
-	plugin := new(PluginType)
+func makeSharedLibType(folderInfos ObakeBuildFolder) *SharedLibType {
+	sharedLib := new(SharedLibType)
 	jsonObj := getBuildFileJSONObj(folderInfos)
 
-	plugin.folderInfos = folderInfos
-	plugin.name = jsonObj.Plugin.Name
-	plugin.outFolder = plugin.folderInfos.path + "/" + jsonObj.Plugin.OutFolder
-	plugin.staticLibs = jsonObj.Plugin.StaticLibs
-	plugin.headerFolders = jsonObj.Plugin.HeadersFolders
-	plugin.sourceExtension = jsonObj.Plugin.SrcExtension
-	plugin.externIncludes = jsonObj.Plugin.ExternIncludes
-	plugin.externLibs = jsonObj.Plugin.ExternLibs
-	plugin.compilerFlags = jsonObj.Plugin.CompilerFlags
+	commonBuildObj := resolveOSParams(jsonObj.SharedLib)
+	sharedLib.folderInfos = folderInfos
+	sharedLib.name = commonBuildObj.Name
+	sharedLib.outFolder = sharedLib.folderInfos.path + "/" + commonBuildObj.OutFolder
+	sharedLib.staticLibs = commonBuildObj.StaticLibs
+	sharedLib.headerFolders = commonBuildObj.HeadersFolders
+	sharedLib.sourceExtension = commonBuildObj.SrcExtension
+	sharedLib.externIncludes = commonBuildObj.ExternIncludes
+	sharedLib.externLibs = commonBuildObj.ExternLibs
+	sharedLib.compilerFlags = commonBuildObj.CompilerFlags
 
-	success, _ := exists(plugin.outFolder)
+	success, _ := exists(sharedLib.outFolder)
 	if !success {
-		os.MkdirAll(plugin.outFolder, os.ModePerm)
+		os.MkdirAll(sharedLib.outFolder, os.ModePerm)
 	}
 
-	plugin.sourceFileNames, plugin.sources = getSourceFiles(jsonObj.Plugin.SrcFolders, jsonObj.Plugin.SrcExtension, folderInfos)
+	sharedLib.sourceFileNames, sharedLib.sources = getSourceFiles(commonBuildObj.SrcFolders, commonBuildObj.SrcExtension, folderInfos)
 
-	return plugin
+	return sharedLib
 }
 
 func makeBinaryType(folderInfos ObakeBuildFolder, outBinary string) *BinaryType {
 	binary := new(BinaryType)
 	jsonObj := getBuildFileJSONObj(folderInfos)
 
+	commonBuildObj := resolveOSParams(jsonObj.Binary)
 	binary.folderInfos = folderInfos
-	binary.name = jsonObj.Binary.Name
+	binary.name = commonBuildObj.Name
 	binary.isOutBinary = outBinary == binary.name
-	binary.outFolder = binary.folderInfos.path + "/" + jsonObj.Binary.OutFolder
-	binary.staticLibs = jsonObj.Binary.StaticLibs
-	binary.plugins = jsonObj.Binary.Plugins
-	binary.headerFolders = jsonObj.Binary.HeadersFolders
-	binary.sourceExtension = jsonObj.Binary.SrcExtension
-	binary.externIncludes = jsonObj.Binary.ExternIncludes
-	binary.externLibs = jsonObj.Binary.ExternLibs
-	binary.compilerFlags = jsonObj.Binary.CompilerFlags
+	binary.outFolder = binary.folderInfos.path + "/" + commonBuildObj.OutFolder
+	binary.staticLibs = commonBuildObj.StaticLibs
+	binary.sharedLibs = commonBuildObj.SharedLibs
+	binary.headerFolders = commonBuildObj.HeadersFolders
+	binary.sourceExtension = commonBuildObj.SrcExtension
+	binary.externIncludes = commonBuildObj.ExternIncludes
+	binary.externLibs = commonBuildObj.ExternLibs
+	binary.compilerFlags = commonBuildObj.CompilerFlags
 
 	success, _ := exists(binary.outFolder)
 	if !success {
 		os.MkdirAll(binary.outFolder, os.ModePerm)
 	}
 
-	binary.sourceFileNames, binary.sources = getSourceFiles(jsonObj.Binary.SrcFolders, jsonObj.Binary.SrcExtension, folderInfos)
+	binary.sourceFileNames, binary.sources = getSourceFiles(commonBuildObj.SrcFolders, commonBuildObj.SrcExtension, folderInfos)
 
 	return binary
 }

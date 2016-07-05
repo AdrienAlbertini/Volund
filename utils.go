@@ -218,6 +218,13 @@ func getOsType(osStr string) ObakeOSType {
 	return UNKNOWN
 }
 
+func returnDefaultIfEmpty(toCheck string, defaultStr string) string {
+	if toCheck == "" {
+		return defaultStr
+	}
+	return toCheck
+}
+
 func exists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {

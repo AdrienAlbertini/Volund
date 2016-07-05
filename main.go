@@ -78,7 +78,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 		boldCyan.Printf("(%d files) Compiling StaticLib: %s\n", len(staticLib.sources), staticLib.name)
 
-		linkPaths, linkNames, linkIncludes := getStaticLibsLinks(staticLib.staticLibs, allLibs, staticLib.name)
+		//	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(staticLib.staticLibs, allLibs, staticLib.name)
 
 		if buildDependencies(staticLib.staticLibs, allLibs) == false {
 			return false
@@ -99,13 +99,13 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 		args = append(args, objectFilesPath...)
 
-		args = append(args, linkIncludes...)
-		args = append(args, linkPaths...)
-		args = append(args, linkNames...)
-		args = append(args, staticLib.compilerFlags...)
+		//	args = append(args, linkIncludes...)
+		//	args = append(args, linkPaths...)
+		//	args = append(args, linkNames...)
+		//	args = append(args, staticLib.compilerFlags...)
 
 		//	args = append(args, getExternIncludesArgs(staticLib.externIncludes)...)
-		args = append(args, getExternLibsArgs(staticLib.externLibs)...)
+		//	args = append(args, getExternLibsArgs(staticLib.externLibs)...)
 
 		fmt.Printf("Handle Static args: %v\n", args)
 		cmd := exec.Command("ar", args...)
@@ -122,28 +122,28 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 	return true
 }
 
-func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
+func handlesharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 
-	boldCyan.Printf("(%d files) Compiling Plugin: %s\n", len(plugin.sources), plugin.name)
+	boldCyan.Printf("(%d files) Compiling sharedLib: %s\n", len(sharedLib.sources), sharedLib.name)
 
-	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(plugin.staticLibs, allLibs, "")
+	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(sharedLib.staticLibs, allLibs, "")
 
-	if buildDependencies(plugin.staticLibs, allLibs) == false {
+	if buildDependencies(sharedLib.staticLibs, allLibs) == false {
 		return false
 	}
 
 	var objSuccess bool
 	var objectFilesPath []string
-	buildAndGetObjectFiles(pluginTypeToObjType(*plugin, plugin.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
+	buildAndGetObjectFiles(sharedLibTypeToObjType(*sharedLib, sharedLib.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 	if objSuccess == false {
-		boldRed.Printf("Build Plugin: %s FAILED\n\n", plugin.name)
+		boldRed.Printf("Build sharedLib: %s FAILED\n\n", sharedLib.name)
 		return false
 	}
 
-	pluginLibExtension := getSharedLibOsExtension()
+	sharedLibLibExtension := getSharedLibOsExtension()
 
-	args := []string{"-shared", "-o", plugin.outFolder + "/" + plugin.name + pluginLibExtension}
+	args := []string{"-shared", "-o", sharedLib.outFolder + "/" + sharedLib.name + sharedLibLibExtension}
 
 	args = append(args, compilerFlags...)
 	args = append(args, objectFilesPath...)
@@ -151,16 +151,16 @@ func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 	args = append(args, linkIncludes...)
 	args = append(args, linkPaths...)
 	args = append(args, linkNames...)
-	args = append(args, plugin.compilerFlags...)
+	args = append(args, sharedLib.compilerFlags...)
 
-	args = append(args, getExternLibsArgs(plugin.externLibs)...)
+	args = append(args, getExternLibsArgs(sharedLib.externLibs)...)
 
-	fmt.Printf("Handle Plugin args: %v\n", args)
+	fmt.Printf("Handle sharedLib args: %v\n", args)
 
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		boldRed.Printf("Plugin: %s | Error: %s\n\n", plugin.name, fmt.Sprint(err.Error()))
+		boldRed.Printf("sharedLib: %s | Error: %s\n\n", sharedLib.name, fmt.Sprint(err.Error()))
 		fmt.Printf("Out: %s\n\n", out)
 		return false
 	}
@@ -170,7 +170,7 @@ func handlePlugin(plugin *PluginType, allLibs []*StaticLibType) bool {
 }
 
 func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
-	staticLibs []*StaticLibType, plugins []*PluginType) bool {
+	staticLibs []*StaticLibType, sharedLibs []*SharedLibType) bool {
 	outBinaryFound := false
 	var outBinary *BinaryType
 
@@ -189,23 +189,23 @@ func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
 
 	binaryExtension := getBinaryOSExtension()
 	staticExtension := getStaticLibOSExtension()
-	pluginExtension := getSharedLibOsExtension()
+	sharedLibExtension := getSharedLibOsExtension()
 
 	success, _ := exists(builder.OutFolder)
 	if !success {
 		os.MkdirAll(builder.OutFolder, os.ModePerm)
 	}
-	success, _ = exists(builder.OutFolder + "Plugins")
+	success, _ = exists(builder.OutFolder + "sharedLibs")
 	if !success {
-		os.MkdirAll(builder.OutFolder+"/Plugins", os.ModePerm)
+		os.MkdirAll(builder.OutFolder+"/sharedLibs", os.ModePerm)
 	}
 
-	boldCyan.Printf("Copying binary files.\n")
+	boldCyan.Printf("Copying out binary files.\n")
 	copy(outBinary.outFolder+"/"+outBinary.name+binaryExtension, builder.OutFolder+"/"+outBinary.name+binaryExtension)
 
-	for _, plugin := range plugins {
-		if contains(outBinary.plugins, plugin.name) {
-			copy(plugin.outFolder+"/"+plugin.name+pluginExtension, builder.OutFolder+"/Plugins/"+plugin.name+pluginExtension)
+	for _, sharedLib := range sharedLibs {
+		if contains(outBinary.sharedLibs, sharedLib.name) {
+			copy(sharedLib.outFolder+"/"+sharedLib.name+sharedLibExtension, builder.OutFolder+"/sharedLibs/"+sharedLib.name+sharedLibExtension)
 		}
 	}
 
@@ -221,7 +221,7 @@ func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
 func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 	var binaries []*BinaryType
 	var staticLibs []*StaticLibType
-	var plugins []*PluginType
+	var sharedLibs []*SharedLibType
 	var obakeRootFileObj ObjectJSON
 
 	json.Unmarshal(rootOBSFile, &obakeRootFileObj)
@@ -234,8 +234,8 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 	}
 
 	if obakeRootFileObj.Builder.FullStatic {
-		obakeRootFileObj.Builder.StaticLibs = append(obakeRootFileObj.Builder.StaticLibs, obakeRootFileObj.Builder.Plugins...)
-		obakeRootFileObj.Builder.Plugins = []string{}
+		obakeRootFileObj.Builder.StaticLibs = append(obakeRootFileObj.Builder.StaticLibs, obakeRootFileObj.Builder.SharedLibs...)
+		obakeRootFileObj.Builder.SharedLibs = []string{}
 	}
 
 	if isValidToolchain(obakeRootFileObj.Builder.Toolchain) {
@@ -257,9 +257,9 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 			if obakeCurrentFile.Binary.Name != "" {
 				buildFolder.buildType = BINARY
 				binaries = append(binaries, makeBinaryType(buildFolder, obakeRootFileObj.Builder.OutBinary))
-			} else if obakeCurrentFile.Plugin.Name != "" {
-				buildFolder.buildType = PLUGIN
-				plugins = append(plugins, makePluginType(buildFolder))
+			} else if obakeCurrentFile.SharedLib.Name != "" {
+				buildFolder.buildType = SHARED_LIB
+				sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
 			} else if obakeCurrentFile.StaticLib.Name != "" {
 				buildFolder.buildType = STATIC_LIB
 				staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
@@ -280,9 +280,10 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 				staticLibs = append(staticLibs[:i], staticLibs[i+1:]...)
 			}
 		}
-		for i, pluginType := range plugins {
-			if (contains(obakeRootFileObj.Builder.Plugins, pluginType.name) == false && contains(outBinary.plugins, pluginType.name) == false) || handlePlugin(pluginType, staticLibs) == false {
-				plugins = append(plugins[:i], plugins[i+1:]...)
+		for i, sharedLibType := range sharedLibs {
+			fmt.Printf("SharedLib: %s\n", sharedLibType.name)
+			if (contains(obakeRootFileObj.Builder.SharedLibs, sharedLibType.name) == false && contains(outBinary.sharedLibs, sharedLibType.name) == false) || handlesharedLib(sharedLibType, staticLibs) == false {
+				sharedLibs = append(sharedLibs[:i], sharedLibs[i+1:]...)
 			}
 		}
 		for i, binaryType := range binaries {
@@ -291,7 +292,7 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 			}
 		}
 
-		handleBuilder(obakeRootFileObj.Builder, binaries, staticLibs, plugins)
+		handleBuilder(obakeRootFileObj.Builder, binaries, staticLibs, sharedLibs)
 	}
 }
 
@@ -314,7 +315,7 @@ func main() {
 		filename := file.Name()
 		if file.IsDir() {
 			filetest := "./" + filename
-			//	fmt.Printf("DirFound: %s\n", filetest)
+			//	fmt.Printf("DirFound: %s\n", filetest)3
 			files, err := ioutil.ReadDir(filetest)
 			if err == nil {
 				subfolderName := filename

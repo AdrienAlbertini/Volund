@@ -1,29 +1,59 @@
 package main
 
 type ObjectJSON struct {
-	Builder   BuilderJSON   `json:"Builder"`
-	Binary    BinaryJSON    `json:"Binary"`
-	StaticLib StaticLibJSON `json:"StaticLib"`
-	Plugin    PluginJSON    `json:"Plugin"`
+	Builder   BuilderJSON     `json:"Builder"`
+	Binary    CommonBuildJSON `json:"Binary"`
+	StaticLib CommonBuildJSON `json:"StaticLib"`
+	SharedLib CommonBuildJSON `json:"SharedLib"`
 }
 
 type BuilderJSON struct {
-	Os            string   `json:"OS"`
-	Toolchain     string   `json:"toolchain"`
-	OutBinary     string   `json:"outBinary"`
-	Binaries      []string `json:"binaries"`
-	StaticLibs    []string `json:"staticLibs"`
-	Plugins       []string `json:"plugins"`
-	PluginsFolder string   `json:"outPluginsFolder"`
-	OutFolder     string   `json:"outFolder"`
-	CompilerFlags []string `json:"compilerFlags"`
-	FullStatic    bool     `json:"fullStatic"`
+	Os               string   `json:"OS"`
+	Toolchain        string   `json:"toolchain"`
+	OutBinary        string   `json:"outBinary"`
+	Binaries         []string `json:"binaries"`
+	StaticLibs       []string `json:"staticLibs"`
+	SharedLibs       []string `json:"sharedLibs"`
+	SharedLibsFolder string   `json:"outsharedLibsFolder"`
+	OutFolder        string   `json:"outFolder"`
+	CompilerFlags    []string `json:"compilerFlags"`
+	FullStatic       bool     `json:"fullStatic"`
 }
 
+type CommonBuildJSON struct {
+	Name           string               `json:"name"`
+	SrcExtension   string               `json:"srcExtension"`
+	OutFolder      string               `json:"outFolder"`
+	StaticLibs     []string             `json:"staticLibs"`
+	SharedLibs     []string             `json:"sharedLibs"`
+	SrcFolders     []string             `json:"srcFolders"`
+	HeadersFolders []string             `json:"headersFolders"`
+	ExternIncludes []string             `json:"externIncludes"`
+	ExternLibs     []string             `json:"externLibs"`
+	CompilerFlags  []string             `json:"compilerFlags"`
+	Windows        OSSpecificParamsJSON `json:"Windows"`
+	Linux          OSSpecificParamsJSON `json:"Linux"`
+	OSX            OSSpecificParamsJSON `json:"OSX"`
+}
+
+type OSSpecificParamsJSON struct {
+	Name           string   `json:"name"`
+	SrcExtension   string   `json:"srcExtension"`
+	OutFolder      string   `json:"outFolder"`
+	StaticLibs     []string `json:"staticLibs"`
+	SharedLibs     []string `json:"sharedLibs"`
+	SrcFolders     []string `json:"srcFolders"`
+	HeadersFolders []string `json:"headersFolders"`
+	ExternIncludes []string `json:"externIncludes"`
+	ExternLibs     []string `json:"externLibs"`
+	CompilerFlags  []string `json:"compilerFlags"`
+}
+
+/*
 type BinaryJSON struct {
 	Name           string   `json:"name"`
 	StaticLibs     []string `json:"staticLibs"`
-	Plugins        []string `json:"plugins"`
+	sharedLibs        []string `json:"sharedLibs"`
 	SrcFolders     []string `json:"srcFolders"`
 	SrcExtension   string   `json:"srcExtension"`
 	HeadersFolders []string `json:"headersFolders"`
@@ -45,7 +75,7 @@ type StaticLibJSON struct {
 	CompilerFlags  []string `json:"compilerFlags"`
 }
 
-type PluginJSON struct {
+type sharedLibJSON struct {
 	Name           string   `json:"name"`
 	StaticLibs     []string `json:"staticLibs"`
 	SrcFolders     []string `json:"srcFolders"`
@@ -56,3 +86,4 @@ type PluginJSON struct {
 	OutFolder      string   `json:"outFolder"`
 	CompilerFlags  []string `json:"compilerFlags"`
 }
+*/
