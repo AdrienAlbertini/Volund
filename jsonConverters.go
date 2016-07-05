@@ -119,6 +119,7 @@ func makeBinaryType(folderInfos ObakeBuildFolder, outBinary string) *BinaryType 
 	binary.isOutBinary = outBinary == binary.name
 	binary.outFolder = binary.folderInfos.path + "/" + jsonObj.Binary.OutFolder
 	binary.staticLibs = jsonObj.Binary.StaticLibs
+	binary.plugins = jsonObj.Binary.Plugins
 	binary.headerFolders = jsonObj.Binary.HeadersFolders
 	binary.sourceExtension = jsonObj.Binary.SrcExtension
 	binary.externIncludes = jsonObj.Binary.ExternIncludes
