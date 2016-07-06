@@ -10,11 +10,11 @@ import (
 	"strings"
 )
 
-type ObakeBuildFolder struct {
-	buildType      ObakeBuildType
-	path           string
-	name           string
-	obakeBuildFile []byte
+type VolundBuildFolder struct {
+	buildType       VolundBuildType
+	path            string
+	name            string
+	volundBuildFile []byte
 }
 
 func checkErr(err error) {
@@ -82,7 +82,7 @@ func getStaticLibByName(staticLibName string, allLibs []*StaticLibType) (bool, *
 	return false, nil
 }
 
-func getSourceFiles(srcFolders []string, extension string, folderInfos ObakeBuildFolder) (sourceFiles []string, sourceFilesPath []string) {
+func getSourceFiles(srcFolders []string, extension string, folderInfos VolundBuildFolder) (sourceFiles []string, sourceFilesPath []string) {
 	var sourceFilesInFolder []string
 
 	for _, srcFolder := range srcFolders {
@@ -106,7 +106,7 @@ func getSourceFiles(srcFolders []string, extension string, folderInfos ObakeBuil
 	return
 }
 
-func getSrcAndHeadersFolderPath(folderInfos ObakeBuildFolder, srcFolder string, headersFolder string) (srcPath string, headersPath string) {
+func getSrcAndHeadersFolderPath(folderInfos VolundBuildFolder, srcFolder string, headersFolder string) (srcPath string, headersPath string) {
 	srcPath = folderInfos.path + "/" + srcFolder
 	headersPath = folderInfos.path + "/" + headersFolder
 	return
@@ -132,10 +132,10 @@ func getAllFilesFromDir(folderPath string, extension string) (finalFiles []strin
 	return
 }
 
-func getBuildFileJSONObj(folder ObakeBuildFolder) ObjectJSON {
-	var subFolderObakeJSON ObjectJSON
-	json.Unmarshal(folder.obakeBuildFile, &subFolderObakeJSON)
-	return subFolderObakeJSON
+func getBuildFileJSONObj(folder VolundBuildFolder) ObjectJSON {
+	var subFolderVolundJSON ObjectJSON
+	json.Unmarshal(folder.volundBuildFile, &subFolderVolundJSON)
+	return subFolderVolundJSON
 }
 
 func getStaticLibOSExtension() string {
@@ -206,7 +206,7 @@ func isValidToolchain(testToolchain string) bool {
 	return false
 }
 
-func getOsType(osStr string) ObakeOSType {
+func getOsType(osStr string) VolundOSType {
 	switch osStr {
 	case "Windows":
 		return WINDOWS

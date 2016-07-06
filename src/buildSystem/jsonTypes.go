@@ -8,14 +8,29 @@ type ObjectJSON struct {
 }
 
 type BuilderJSON struct {
-	Os               string   `json:"OS"`
+	Os               string                `json:"OS"`
+	Toolchain        string                `json:"toolchain"`
+	OutBinary        string                `json:"outBinary"`
+	SharedLibsFolder string                `json:"outsharedLibsFolder"`
+	OutFolder        string                `json:"outFolder"`
+	Binaries         []string              `json:"binaries"`
+	StaticLibs       []string              `json:"staticLibs"`
+	SharedLibs       []string              `json:"sharedLibs"`
+	CompilerFlags    []string              `json:"compilerFlags"`
+	FullStatic       bool                  `json:"fullStatic"`
+	Windows          BuilderOSSpecificJSON `json:"Windows"`
+	Linux            BuilderOSSpecificJSON `json:"Linux"`
+	OSX              BuilderOSSpecificJSON `json:"OSX"`
+}
+
+type BuilderOSSpecificJSON struct {
 	Toolchain        string   `json:"toolchain"`
 	OutBinary        string   `json:"outBinary"`
+	SharedLibsFolder string   `json:"outsharedLibsFolder"`
+	OutFolder        string   `json:"outFolder"`
 	Binaries         []string `json:"binaries"`
 	StaticLibs       []string `json:"staticLibs"`
 	SharedLibs       []string `json:"sharedLibs"`
-	SharedLibsFolder string   `json:"outsharedLibsFolder"`
-	OutFolder        string   `json:"outFolder"`
 	CompilerFlags    []string `json:"compilerFlags"`
 	FullStatic       bool     `json:"fullStatic"`
 }

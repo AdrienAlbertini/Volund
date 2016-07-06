@@ -26,7 +26,7 @@ func buildDependencies(staticLibs []string, allLibs []*StaticLibType) bool {
 
 func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 
-	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(binary.staticLibs, allLibs, binary.name)
+	_, linkNames, linkIncludes := getStaticLibsLinks(binary.staticLibs, allLibs, binary.name)
 
 	boldCyan.Printf("(%d files) Compiling Binary: %s\n", len(binary.sources), binary.name)
 
@@ -51,7 +51,7 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 	args = append(args, objectFilesPath...)
 
 	args = append(args, linkIncludes...)
-	args = append(args, linkPaths...)
+	//	args = append(args, linkPaths...)
 	args = append(args, linkNames...)
 	args = append(args, binary.compilerFlags...)
 
@@ -126,7 +126,7 @@ func handlesharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 
 	boldCyan.Printf("(%d files) Compiling sharedLib: %s\n", len(sharedLib.sources), sharedLib.name)
 
-	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(sharedLib.staticLibs, allLibs, "")
+	_, linkNames, linkIncludes := getStaticLibsLinks(sharedLib.staticLibs, allLibs, "")
 
 	if buildDependencies(sharedLib.staticLibs, allLibs) == false {
 		return false
@@ -149,7 +149,7 @@ func handlesharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 	args = append(args, objectFilesPath...)
 
 	args = append(args, linkIncludes...)
-	args = append(args, linkPaths...)
+	//	args = append(args, linkPaths...)
 	args = append(args, linkNames...)
 	args = append(args, sharedLib.compilerFlags...)
 
@@ -218,32 +218,32 @@ func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
 	return true
 }
 
-func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
+func handleFiles(rootOBSFile []byte, subFiles []VolundBuildFolder) {
 	var binaries []*BinaryType
 	var staticLibs []*StaticLibType
 	var sharedLibs []*SharedLibType
-	var obakeRootFileObj ObjectJSON
+	var volundRootFileObj ObjectJSON
 
-	json.Unmarshal(rootOBSFile, &obakeRootFileObj)
-	//fmt.Printf("RootOBSFile: %v\n", obakeRootFileObj)
+	json.Unmarshal(rootOBSFile, &volundRootFileObj)
+	//fmt.Printf("RootOBSFile: %v\n", volundRootFileObj)
 
-	osType = getOsType(obakeRootFileObj.Builder.Os)
-	compilerFlags = obakeRootFileObj.Builder.CompilerFlags
-	if contains(obakeRootFileObj.Builder.Binaries, obakeRootFileObj.Builder.OutBinary) == false {
-		obakeRootFileObj.Builder.Binaries = append(obakeRootFileObj.Builder.Binaries, obakeRootFileObj.Builder.OutBinary)
+	osType = getOsType(volundRootFileObj.Builder.Os)
+	compilerFlags = volundRootFileObj.Builder.CompilerFlags
+	if contains(volundRootFileObj.Builder.Binaries, volundRootFileObj.Builder.OutBinary) == false {
+		volundRootFileObj.Builder.Binaries = append(volundRootFileObj.Builder.Binaries, volundRootFileObj.Builder.OutBinary)
 	}
 
-	if obakeRootFileObj.Builder.FullStatic {
-		obakeRootFileObj.Builder.StaticLibs = append(obakeRootFileObj.Builder.StaticLibs, obakeRootFileObj.Builder.SharedLibs...)
-		obakeRootFileObj.Builder.SharedLibs = []string{}
+	if volundRootFileObj.Builder.FullStatic {
+		volundRootFileObj.Builder.StaticLibs = append(volundRootFileObj.Builder.StaticLibs, volundRootFileObj.Builder.SharedLibs...)
+		volundRootFileObj.Builder.SharedLibs = []string{}
 	}
 
-	if isValidToolchain(obakeRootFileObj.Builder.Toolchain) {
-		toolchain = obakeRootFileObj.Builder.Toolchain
+	if isValidToolchain(volundRootFileObj.Builder.Toolchain) {
+		toolchain = volundRootFileObj.Builder.Toolchain
 	} else {
 		toolchain = DEFAULT_TOOLCHAIN
 	}
-	boldRed.Printf("Volund: OsType: %s | Toolchain: %s\n", obakeRootFileObj.Builder.Os, toolchain)
+	boldRed.Printf("Volund: OsType: %s | Toolchain: %s\n", volundRootFileObj.Builder.Os, toolchain)
 	//	fmt.Printf("SubFilesNB: %d\n", len(subFiles))
 
 	if osType != UNKNOWN {
@@ -251,16 +251,16 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 
 			boldGreen.Print("ReadFile: ")
 			fmt.Printf("%s\n", "./"+buildFolder.name+"/"+OBAKE_BS_FILENAME)
-			buildFolder.obakeBuildFile, _ = ioutil.ReadFile("./" + buildFolder.name + "/" + OBAKE_BS_FILENAME)
-			obakeCurrentFile := getBuildFileJSONObj(buildFolder)
+			buildFolder.volundBuildFile, _ = ioutil.ReadFile("./" + buildFolder.name + "/" + OBAKE_BS_FILENAME)
+			volundCurrentFile := getBuildFileJSONObj(buildFolder)
 
-			if obakeCurrentFile.Binary.Name != "" {
+			if volundCurrentFile.Binary.Name != "" {
 				buildFolder.buildType = BINARY
-				binaries = append(binaries, makeBinaryType(buildFolder, obakeRootFileObj.Builder.OutBinary))
-			} else if obakeCurrentFile.SharedLib.Name != "" {
+				binaries = append(binaries, makeBinaryType(buildFolder, volundRootFileObj.Builder.OutBinary))
+			} else if volundCurrentFile.SharedLib.Name != "" {
 				buildFolder.buildType = SHARED_LIB
 				sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
-			} else if obakeCurrentFile.StaticLib.Name != "" {
+			} else if volundCurrentFile.StaticLib.Name != "" {
 				buildFolder.buildType = STATIC_LIB
 				staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
 			}
@@ -268,7 +268,7 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 
 		var outBinary *BinaryType
 		for _, checkBinary := range binaries {
-			if checkBinary.name == obakeRootFileObj.Builder.OutBinary {
+			if checkBinary.name == volundRootFileObj.Builder.OutBinary {
 				outBinary = checkBinary
 				break
 			}
@@ -276,29 +276,28 @@ func handleFiles(rootOBSFile []byte, subFiles []ObakeBuildFolder) {
 
 		fmt.Printf("\n")
 		for i, staticType := range staticLibs {
-			if (contains(obakeRootFileObj.Builder.StaticLibs, staticType.name) == false && contains(outBinary.staticLibs, staticType.name) == false) || handleStatic(staticType, staticLibs) == false {
+			if (contains(volundRootFileObj.Builder.StaticLibs, staticType.name) == false && contains(outBinary.staticLibs, staticType.name) == false) || handleStatic(staticType, staticLibs) == false {
 				staticLibs = append(staticLibs[:i], staticLibs[i+1:]...)
 			}
 		}
 		for i, sharedLibType := range sharedLibs {
-			fmt.Printf("SharedLib: %s\n", sharedLibType.name)
-			if (contains(obakeRootFileObj.Builder.SharedLibs, sharedLibType.name) == false && contains(outBinary.sharedLibs, sharedLibType.name) == false) || handlesharedLib(sharedLibType, staticLibs) == false {
+			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.name) == false && contains(outBinary.sharedLibs, sharedLibType.name) == false) || handlesharedLib(sharedLibType, staticLibs) == false {
 				sharedLibs = append(sharedLibs[:i], sharedLibs[i+1:]...)
 			}
 		}
 		for i, binaryType := range binaries {
-			if contains(obakeRootFileObj.Builder.Binaries, binaryType.name) == false || handleBinary(binaryType, staticLibs) == false {
+			if contains(volundRootFileObj.Builder.Binaries, binaryType.name) == false || handleBinary(binaryType, staticLibs) == false {
 				binaries = append(binaries[:i], binaries[i+1:]...)
 			}
 		}
 
-		handleBuilder(obakeRootFileObj.Builder, binaries, staticLibs, sharedLibs)
+		handleBuilder(volundRootFileObj.Builder, binaries, staticLibs, sharedLibs)
 	}
 }
 
 func main() {
 	//	var argsWithProg []string = os.Args
-	var subFiles []ObakeBuildFolder
+	var subFiles []VolundBuildFolder
 	var rootOBSFile []byte
 	var subOBSFile []byte
 
@@ -323,11 +322,11 @@ func main() {
 					filename = file.Name()
 					if filename == OBAKE_BS_FILENAME {
 
-						//	fmt.Printf("	Obake SubBuild File Found\n")
+						//	fmt.Printf("	Volund SubBuild File Found\n")
 						subOBSFile, _ = ioutil.ReadFile(filename)
-						var subFolderInfo ObakeBuildFolder
+						var subFolderInfo VolundBuildFolder
 						subFolderInfo.buildType = NONE
-						subFolderInfo = ObakeBuildFolder{path: "./" + subfolderName, name: subfolderName, obakeBuildFile: subOBSFile}
+						subFolderInfo = VolundBuildFolder{path: "./" + subfolderName, name: subfolderName, volundBuildFile: subOBSFile}
 						subFiles = append(subFiles, subFolderInfo)
 					}
 				}
@@ -337,7 +336,7 @@ func main() {
 			}
 		} else if filename == OBAKE_BS_FILENAME {
 			rootOBSFile, _ = ioutil.ReadFile(filename)
-			//	fmt.Printf("Obake RootBuild File Found\n\n")
+			//	fmt.Printf("Volund RootBuild File Found\n\n")
 
 		}
 	}

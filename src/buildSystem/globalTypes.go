@@ -1,14 +1,14 @@
 package main
 
-type ObakeToolchainType int64
-type ObakeOSType int64
-type ObakeBuildType int64
+type VolundToolchainType int64
+type VolundOSType int64
+type VolundBuildType int64
 
-const OBAKE_BS_FILENAME string = "ObakeBuild.json"
+const OBAKE_BS_FILENAME string = "VolundBuild.json"
 const DEFAULT_TOOLCHAIN string = "clang++"
 
 const (
-	BINARY ObakeBuildType = iota
+	BINARY VolundBuildType = iota
 	STATIC_LIB
 	SHARED_LIB
 	Builder
@@ -16,7 +16,7 @@ const (
 )
 
 const (
-	WINDOWS ObakeOSType = iota
+	WINDOWS VolundOSType = iota
 	LINUX
 	OSX
 	UNKNOWN
@@ -37,6 +37,6 @@ const (
 )
 
 var compilerFlags []string
-var osType ObakeOSType
+var osType VolundOSType
 var toolchain string
 var builder BuilderType

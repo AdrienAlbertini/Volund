@@ -11,7 +11,7 @@ import (
 )
 
 type ObjFileRequirement struct {
-	folderInfos     ObakeBuildFolder
+	folderInfos     VolundBuildFolder
 	allLibs         *[]*StaticLibType
 	sourceFilesPath []string
 	sourceFiles     []string
@@ -24,7 +24,7 @@ type ObjFileRequirement struct {
 	outFolder       string
 }
 
-func sharedLibTypeToObjType(sharedLib SharedLibType, folderInfos ObakeBuildFolder,
+func sharedLibTypeToObjType(sharedLib SharedLibType, folderInfos VolundBuildFolder,
 	allLibs *[]*StaticLibType) (objType ObjFileRequirement) {
 
 	objType.folderInfos = folderInfos
@@ -42,7 +42,7 @@ func sharedLibTypeToObjType(sharedLib SharedLibType, folderInfos ObakeBuildFolde
 	return
 }
 
-func staticLibTypeToObjType(staticLib StaticLibType, folderInfos ObakeBuildFolder,
+func staticLibTypeToObjType(staticLib StaticLibType, folderInfos VolundBuildFolder,
 	allLibs *[]*StaticLibType) (objType ObjFileRequirement) {
 
 	objType.folderInfos = folderInfos
@@ -60,7 +60,7 @@ func staticLibTypeToObjType(staticLib StaticLibType, folderInfos ObakeBuildFolde
 	return
 }
 
-func binaryTypeToObjType(binary BinaryType, folderInfos ObakeBuildFolder,
+func binaryTypeToObjType(binary BinaryType, folderInfos VolundBuildFolder,
 	allLibs *[]*StaticLibType) (objType ObjFileRequirement) {
 
 	objType.folderInfos = folderInfos
@@ -102,7 +102,7 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	args = append(args, linkIncludes...)
 	args = append(args, linkNames...)
 
-	args = append(args, getExternIncludesArgs(objType.externIncludes)...)
+	//args = append(args, getExternIncludesArgs(objType.externIncludes)...)
 	args = append(args, getExternLibsArgs(objType.externLibs)...)
 	args = append(args, objType.compilerFlags...)
 

@@ -6,7 +6,7 @@ import (
 )
 
 type BinaryType struct {
-	folderInfos     ObakeBuildFolder
+	folderInfos     VolundBuildFolder
 	name            string
 	sourceExtension string
 	staticLibs      []string
@@ -22,7 +22,7 @@ type BinaryType struct {
 }
 
 type StaticLibType struct {
-	folderInfos     ObakeBuildFolder
+	folderInfos     VolundBuildFolder
 	name            string
 	sourceExtension string
 	staticLibs      []string
@@ -38,7 +38,7 @@ type StaticLibType struct {
 }
 
 type SharedLibType struct {
-	folderInfos     ObakeBuildFolder
+	folderInfos     VolundBuildFolder
 	name            string
 	sourceExtension string
 	staticLibs      []string
@@ -53,7 +53,7 @@ type SharedLibType struct {
 }
 
 type BuilderType struct {
-	os               ObakeOSType
+	os               VolundOSType
 	outBinary        BinaryType
 	binaries         []BinaryType
 	staticLibs       []StaticLibType
@@ -64,6 +64,10 @@ type BuilderType struct {
 
 func (s OSSpecificParamsJSON) IsEmpty() bool {
 	return reflect.DeepEqual(s, OSSpecificParamsJSON{})
+}
+
+func (s BuilderOSSpecificJSON) IsEmpty() bool {
+	return reflect.DeepEqual(s, BuilderOSSpecificJSON{})
 }
 
 func resolveOSParams(jsonObj CommonBuildJSON) (resolvedJson CommonBuildJSON) {
@@ -101,7 +105,41 @@ func resolveOSParams(jsonObj CommonBuildJSON) (resolvedJson CommonBuildJSON) {
 	return
 }
 
-func makeStaticLibType(folderInfos ObakeBuildFolder) *StaticLibType {
+func resolveBuilderOSParams(jsonObj BuilderJSON) (resolvedJson BuilderJSON) {
+	var resolveJsonObj BuilderOSSpecificJSON
+
+	resolvedJson = jsonObj
+	switch osType {
+	case WINDOWS:
+		if jsonObj.Windows.IsEmpty() {
+			return
+		}
+		resolveJsonObj = jsonObj.Windows
+	case LINUX:
+		if jsonObj.Linux.IsEmpty() {
+			return
+		}
+		resolveJsonObj = jsonObj.Linux
+	case OSX:
+		if jsonObj.OSX.IsEmpty() {
+			return
+		}
+		resolveJsonObj = jsonObj.OSX
+	}
+
+	resolvedJson.Toolchain = returnDefaultIfEmpty(resolveJsonObj.Toolchain, jsonObj.Toolchain)
+	resolvedJson.OutBinary = returnDefaultIfEmpty(resolveJsonObj.OutBinary, jsonObj.OutBinary)
+	resolvedJson.SharedLibsFolder = returnDefaultIfEmpty(resolveJsonObj.SharedLibsFolder, jsonObj.SharedLibsFolder)
+	resolvedJson.OutFolder = returnDefaultIfEmpty(resolveJsonObj.OutFolder, jsonObj.OutFolder)
+	resolvedJson.Binaries = append(jsonObj.Binaries, resolveJsonObj.Binaries...)
+	resolvedJson.StaticLibs = append(jsonObj.StaticLibs, resolveJsonObj.StaticLibs...)
+	resolvedJson.SharedLibs = append(jsonObj.SharedLibs, resolveJsonObj.SharedLibs...)
+	resolvedJson.CompilerFlags = append(jsonObj.CompilerFlags, resolveJsonObj.CompilerFlags...)
+	resolvedJson.FullStatic = jsonObj.FullStatic
+	return
+}
+
+func makeStaticLibType(folderInfos VolundBuildFolder) *StaticLibType {
 	staticLib := new(StaticLibType)
 	jsonObj := getBuildFileJSONObj(folderInfos)
 
@@ -127,7 +165,7 @@ func makeStaticLibType(folderInfos ObakeBuildFolder) *StaticLibType {
 	return staticLib
 }
 
-func makeSharedLibType(folderInfos ObakeBuildFolder) *SharedLibType {
+func makeSharedLibType(folderInfos VolundBuildFolder) *SharedLibType {
 	sharedLib := new(SharedLibType)
 	jsonObj := getBuildFileJSONObj(folderInfos)
 
@@ -152,7 +190,7 @@ func makeSharedLibType(folderInfos ObakeBuildFolder) *SharedLibType {
 	return sharedLib
 }
 
-func makeBinaryType(folderInfos ObakeBuildFolder, outBinary string) *BinaryType {
+func makeBinaryType(folderInfos VolundBuildFolder, outBinary string) *BinaryType {
 	binary := new(BinaryType)
 	jsonObj := getBuildFileJSONObj(folderInfos)
 
