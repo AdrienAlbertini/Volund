@@ -63,7 +63,7 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		boldGreen.Printf("Binary: %s | Error: %s\n\n", binary.name, fmt.Sprint(err))
+		boldRed.Printf("Binary: %s | Error: %s\n\n", binary.name, fmt.Sprint(err))
 		fmt.Printf("%s\n", string(out))
 		return false
 	}

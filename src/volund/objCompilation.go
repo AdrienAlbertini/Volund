@@ -78,15 +78,13 @@ func binaryTypeToObjType(binary BinaryType, folderInfos VolundBuildFolder,
 	return
 }
 
-func buildObjFile(objType ObjFileRequirement, srcFilePath string,
-	i int, objCompleteChan chan int,
-	success *bool, objectFilesPath *[]string,
-	mutex *sync.Mutex, bar *pb.ProgressBar) {
-	oFilePath := objType.outFolder + "/" + strings.Replace(objType.sourceFiles[i], objType.sourceExtension, ".o", -1)
-	*objectFilesPath = append(*objectFilesPath, oFilePath)
+func getObjFileArgs(objType ObjFileRequirement, fileID int, srcFilePath string) (args []string) {
+
+	oFilePath := objType.outFolder + "/" + strings.Replace(objType.sourceFiles[fileID], objType.sourceExtension, ".o", -1)
+	//	*objectFilesPath = append(*objectFilesPath, oFilePath)
 
 	//		fmt.Printf("SrcFilePath: %s\n", srcFilePath)
-	args := []string{"-c", objType.folderInfos.path + "/" + srcFilePath, "-o", oFilePath}
+	args = []string{"-c", objType.folderInfos.path + "/" + srcFilePath, "-o", oFilePath}
 	args = append(args, compilerFlags...)
 
 	for _, headerFolder := range objType.headersFolders {
@@ -105,13 +103,23 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	//args = append(args, getExternIncludesArgs(objType.externIncludes)...)
 	args = append(args, getExternLibsArgs(objType.externLibs)...)
 	args = append(args, objType.compilerFlags...)
+	return
+}
+
+func buildObjFile(objType ObjFileRequirement, srcFilePath string,
+	i int, objCompleteChan chan int,
+	success *bool, objectFilesPath *[]string,
+	mutex *sync.Mutex, bar *pb.ProgressBar) {
+	args := getObjFileArgs(objType, i, srcFilePath)
+	oFilePath := objType.outFolder + "/" + strings.Replace(objType.sourceFiles[i], objType.sourceExtension, ".o", -1)
+	*objectFilesPath = append(*objectFilesPath, oFilePath)
 
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		mutex.Lock()
 		bar.Finish()
-		boldRed.Printf("ObjFile: %s | Error: %s:\n\n", srcFilePath, fmt.Sprint(err))
+		boldRed.Printf("ObjFile: %s | Error: %s:\nArgs: %v \n\n", srcFilePath, fmt.Sprint(err), args)
 		fmt.Printf("%s\n", string(out))
 		mutex.Unlock()
 		//fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, fmt.Sprint(err))
@@ -133,8 +141,8 @@ func buildAndGetObjectFiles(objType ObjFileRequirement, success *bool,
 	objCompleteChan := make(chan int)
 	var mutex = &sync.Mutex{}
 
-	for _, fileToCompile := range objType.sourceFilesPath {
-		fmt.Printf("\t%s\n", fileToCompile)
+	for fileID, fileToCompile := range objType.sourceFilesPath {
+		fmt.Printf("\t%-30s %v\n", fileToCompile, getObjFileArgs(objType, fileID, fileToCompile))
 	}
 	fmt.Printf("\n")
 
