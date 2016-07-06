@@ -226,6 +226,7 @@ func handleFiles(rootOBSFile []byte, subFiles []VolundBuildFolder) {
 
 	json.Unmarshal(rootOBSFile, &volundRootFileObj)
 	//fmt.Printf("RootOBSFile: %v\n", volundRootFileObj)
+	volundRootFileObj.Builder = resolveBuilderOSParams(volundRootFileObj.Builder)
 
 	osType = getOsType(volundRootFileObj.Builder.Os)
 	compilerFlags = volundRootFileObj.Builder.CompilerFlags
