@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
@@ -208,6 +209,15 @@ func isValidToolchain(testToolchain string) bool {
 
 func getOsType(osStr string) VolundOSType {
 	switch osStr {
+	case "Auto":
+		switch runtime.GOOS {
+		case "windows":
+			return WINDOWS
+		case "linux":
+			return LINUX
+		case "darwin":
+			return OSX
+		}
 	case "Windows":
 		return WINDOWS
 	case "Linux":
@@ -216,6 +226,18 @@ func getOsType(osStr string) VolundOSType {
 		return OSX
 	}
 	return UNKNOWN
+}
+
+func (osConst VolundOSType) ToString() string {
+	switch osConst {
+	case WINDOWS:
+		return "Windows"
+	case LINUX:
+		return "Linux"
+	case OSX:
+		return "OSX"
+	}
+	return "Unknown OS"
 }
 
 func returnDefaultIfEmpty(toCheck string, defaultStr string) string {

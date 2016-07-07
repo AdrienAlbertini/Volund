@@ -257,7 +257,7 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 	} else {
 		toolchain = DEFAULT_TOOLCHAIN
 	}
-	boldRed.Printf("Volund: OsType: %s | Toolchain: %s\n", volundRootFileObj.Builder.Os, toolchain)
+	boldRed.Printf("Volund: OS: %s | Toolchain: %s\n", osType.ToString(), toolchain)
 	//	fmt.Printf("SubFilesNB: %d\n", len(subFiles))
 
 	if osType != UNKNOWN {
