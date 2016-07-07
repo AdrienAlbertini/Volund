@@ -290,16 +290,23 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 				switch buildFolder.buildType {
 				case BINARY:
 					binaries = append(binaries, makeBinaryType(buildFolder, volundRootFileObj.Builder.OutBinary))
+					if contains(volundRootFileObj.Builder.Binaries, volundCurrentFile.Binary.Name) {
+						boldYellow.Printf("WARNING: will not be build (not present in Builder file).\n")
+					}
 				case SHARED_LIB:
 					sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
+					if contains(volundRootFileObj.Builder.SharedLibs, volundCurrentFile.SharedLib.Name) {
+						boldYellow.Printf("WARNING: will not be build (not present in Builder file).\n")
+					}
 				case STATIC_LIB:
 					staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
+					if contains(volundRootFileObj.Builder.StaticLibs, volundCurrentFile.StaticLib.Name) {
+						boldYellow.Printf("WARNING: will not be build (not present in Builder file).\n")
+					}
+				case NONE:
+					boldRed.Printf("ERROR: can't find build type for this file.\n")
 				}
-			} else {
-				boldRed.Printf("ERROR: can't find build type for this file.\n")
-				continue
 			}
-
 			/*
 				if volundCurrentFile.Binary.IsEmpty() == false {
 					buildFolder.buildType = BINARY

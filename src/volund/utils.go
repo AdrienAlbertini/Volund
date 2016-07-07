@@ -175,7 +175,7 @@ func getStaticLibsLinks(libsToLink []string, libs []*StaticLibType, avoidLib str
 		//		fmt.Printf("GetStaticLibsLinks Libs: %s\n", staticLib.name)
 		if (staticLib.name != avoidLib) && (contains(libsToLink, staticLib.name)) {
 			path := "-L" + staticLib.outFolder
-			name := "-l" + staticLib.outFolder + "/" + staticLib.name //+ getStaticLibOSExtension()
+			name := staticLib.outFolder + "/" + staticLib.name + getStaticLibOSExtension()
 
 			linkIncludes = append(linkIncludes, "-I"+"./"+staticLib.name+"/.")
 			for _, includeHeader := range staticLib.headerFolders {

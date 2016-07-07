@@ -147,7 +147,7 @@ func buildAndGetObjectFiles(objType ObjFileRequirement, success *bool,
 
 	for fileID, srcFilePath := range objType.sourceFilesPath {
 		if contains(objType.excludeSrc, srcFilePath) == false {
-			fmt.Printf("\t%-30s %v\n", srcFilePath, getObjFileArgs(objType, fileID, srcFilePath))
+			fmt.Printf("\t%s \n\t%v\n\n", srcFilePath, getObjFileArgs(objType, fileID, srcFilePath))
 		}
 	}
 
