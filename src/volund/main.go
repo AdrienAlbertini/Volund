@@ -67,6 +67,12 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 		fmt.Printf("%s\n", string(out))
 		return false
 	}
+
+	if osType == OSX || osType == LINUX {
+		args = []string{"+x", binary.outFolder + "/" + binary.name + binaryExtension}
+		exec.Command("chmod", args...).Run()
+	}
+
 	fmt.Printf("%s\n\n", out)
 	binary.isBuilt = true
 
@@ -123,7 +129,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 	return true
 }
 
-func handlesharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
+func handleSharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 
 	boldCyan.Printf("(%d files) Compiling SharedLib: %s\n", len(sharedLib.sources), sharedLib.name)
 
@@ -214,7 +220,7 @@ func handleBuilder(outBinaryError bool, builder BuilderJSON, binaries []*BinaryT
 		os.MkdirAll(builder.OutFolder+"/sharedLibs", os.ModePerm)
 	}
 
-	boldCyan.Printf("Copying out binary files.\n")
+	boldCyan.Printf("\nCopying out binary files.\n")
 	copy(outBinary.outFolder+"/"+outBinary.name+binaryExtension, builder.OutFolder+"/"+outBinary.name+binaryExtension)
 
 	for _, sharedLib := range sharedLibs {
@@ -342,7 +348,7 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 		}
 		for i := 0; i < len(sharedLibs); i++ {
 			sharedLibType := sharedLibs[i]
-			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.name) == false && contains(outBinary.sharedLibs, sharedLibType.name) == false) || handlesharedLib(sharedLibType, staticLibs) == false {
+			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.name) == false && contains(outBinary.sharedLibs, sharedLibType.name) == false) || handleSharedLib(sharedLibType, staticLibs) == false {
 				sharedLibs = append(sharedLibs[:i], sharedLibs[i+1:]...)
 				i = -1
 			}
