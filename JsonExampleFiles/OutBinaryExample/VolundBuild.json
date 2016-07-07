@@ -1,7 +1,7 @@
 {
   "Binary":
    {
-     "name": "BinaryExemple",
+     "name": "OutBinaryExemple",
      "srcFolders": ["."],
      "staticLibs": ["StaticLibExemple"],
      "srcExtension": ".cpp",
