@@ -39,7 +39,7 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 	buildAndGetObjectFiles(binaryTypeToObjType(*binary, binary.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 	if objSuccess == false {
-		boldRed.Printf("Build Binary: %s FAILED\n\n", binary.name)
+		boldRed.Printf("ERROR: Build Binary: %s FAILED\n\n", binary.name)
 		return false
 	}
 
@@ -63,7 +63,7 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		boldRed.Printf("Binary: %s | Error: %s\n\n", binary.name, fmt.Sprint(err))
+		boldRed.Printf("ERROR: Binary: %s | Error: %s\n\n", binary.name, fmt.Sprint(err))
 		fmt.Printf("%s\n", string(out))
 		return false
 	}
@@ -144,7 +144,14 @@ func handlesharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 
 	sharedLibLibExtension := getSharedLibOsExtension()
 
-	args := []string{"-shared", "-o", sharedLib.outFolder + "/" + sharedLib.name + sharedLibLibExtension}
+	osSharedFlag := "-shared"
+
+	switch osType {
+	case LINUX:
+		osSharedFlag = "-fPIC"
+	}
+
+	args := []string{osSharedFlag, "-o", sharedLib.outFolder + "/" + sharedLib.name + sharedLibLibExtension}
 
 	args = append(args, compilerFlags...)
 	args = append(args, objectFilesPath...)
@@ -247,7 +254,7 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 	//	volundRootFileObj.Builder = resolveBuilderOSParams(volundRootFileObj.Builder)
 
 	if osType == UNKNOWN {
-		boldRed.Printf("ERROR: OS not supported", osType.ToString(), toolchain)
+		boldRed.Printf("ERROR: OS not supported\n")
 		return
 	}
 
@@ -267,7 +274,7 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 		toolchain = DEFAULT_TOOLCHAIN
 	}
 
-	boldRed.Printf("Volund: OS: %s | Toolchain: %s\n", osType.ToString(), toolchain)
+	boldRed.Printf("Volund: OS: %s | Toolchain: %s\n\n", osType.ToString(), toolchain)
 	//	fmt.Printf("SubFilesNB: %d\n", len(subFiles))
 
 	if osType != UNKNOWN {
@@ -276,20 +283,38 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 			boldGreen.Print("ReadFile: ")
 			fmt.Printf("%s\n", "./"+buildFolder.name+"/"+VOLUND_BUILD_FILENAME)
 			buildFolder.volundBuildFile, _ = ioutil.ReadFile("./" + buildFolder.name + "/" + VOLUND_BUILD_FILENAME)
-			volundCurrentFile := getBuildFileJSONObj(buildFolder)
+			volundCurrentFile := getFileJSONObj(buildFolder)
 
-			if volundCurrentFile.Binary.IsEmpty() == false {
-				buildFolder.buildType = BINARY
-				binaries = append(binaries, makeBinaryType(buildFolder, volundRootFileObj.Builder.OutBinary))
-			} else if volundCurrentFile.SharedLib.IsEmpty() == false {
-				buildFolder.buildType = SHARED_LIB
-				sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
-			} else if volundCurrentFile.StaticLib.IsEmpty() == false {
-				buildFolder.buildType = STATIC_LIB
-				staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
+			if resolveBuildType(&volundCurrentFile, &buildFolder, &volundRootFileObj.Builder.Binaries,
+				&volundRootFileObj.Builder.StaticLibs, &volundRootFileObj.Builder.SharedLibs) {
+				switch buildFolder.buildType {
+				case BINARY:
+					binaries = append(binaries, makeBinaryType(buildFolder, volundRootFileObj.Builder.OutBinary))
+				case SHARED_LIB:
+					sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
+				case STATIC_LIB:
+					staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
+				}
 			} else {
-				boldYellow.Printf("WARNING : Can't parse json: %s\n", "./"+buildFolder.name+"/"+VOLUND_BUILD_FILENAME)
+				boldRed.Printf("ERROR: can't find build type for this file.\n")
+				continue
 			}
+
+			/*
+				if volundCurrentFile.Binary.IsEmpty() == false {
+					buildFolder.buildType = BINARY
+					binaries = append(binaries, makeBinaryType(buildFolder, volundRootFileObj.Builder.OutBinary))
+				} else if volundCurrentFile.SharedLib.IsEmpty() == false {
+					buildFolder.buildType = SHARED_LIB
+					sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
+				} else if volundCurrentFile.StaticLib.IsEmpty() == false {
+					buildFolder.buildType = STATIC_LIB
+					staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
+				} else {
+					buildFolder.buildType = NONE
+					boldYellow.Printf("WARNING : Can't parse json: %s\n", "./"+buildFolder.name+"/"+VOLUND_BUILD_FILENAME)
+				}
+			*/
 		}
 
 		var outBinary *BinaryType
@@ -301,22 +326,30 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 		}
 
 		fmt.Printf("\n")
-		for i, staticType := range staticLibs {
+		for i := 0; i < len(staticLibs); i++ {
+			staticType := staticLibs[i]
 			if (contains(volundRootFileObj.Builder.StaticLibs, staticType.name) == false && contains(outBinary.staticLibs, staticType.name) == false) || handleStatic(staticType, staticLibs) == false {
 				staticLibs = append(staticLibs[:i], staticLibs[i+1:]...)
+				i = -1
 			}
 		}
-		for i, sharedLibType := range sharedLibs {
+		for i := 0; i < len(sharedLibs); i++ {
+			sharedLibType := sharedLibs[i]
 			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.name) == false && contains(outBinary.sharedLibs, sharedLibType.name) == false) || handlesharedLib(sharedLibType, staticLibs) == false {
 				sharedLibs = append(sharedLibs[:i], sharedLibs[i+1:]...)
+				i = -1
 			}
 		}
-		for i, binaryType := range binaries {
+
+		for i := 0; i < len(binaries); i++ {
+			binaryType := binaries[i]
+			fmt.Printf("Binary[%d]: %s\n", i, binaryType.name)
 			if contains(volundRootFileObj.Builder.Binaries, binaryType.name) == false || handleBinary(binaryType, staticLibs) == false {
 				binaries = append(binaries[:i], binaries[i+1:]...)
 				if volundRootFileObj.Builder.OutBinary == binaryType.name {
 					outBinaryError = true
 				}
+				i = -1
 			}
 		}
 

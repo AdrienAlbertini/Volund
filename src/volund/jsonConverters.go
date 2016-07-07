@@ -10,6 +10,7 @@ type BinaryType struct {
 	sourceExtension string
 	staticLibs      []string
 	sharedLibs      []string
+	excludeSrc      []string
 	sources         []string
 	sourceFileNames []string
 	headerFolders   []string
@@ -27,6 +28,7 @@ type StaticLibType struct {
 	sourceExtension string
 	staticLibs      []string
 	sharedLibs      []string
+	excludeSrc      []string
 	sources         []string
 	sourceFileNames []string
 	headerFolders   []string
@@ -43,6 +45,7 @@ type SharedLibType struct {
 	sourceExtension string
 	staticLibs      []string
 	sharedLibs      []string
+	excludeSrc      []string
 	sources         []string
 	sourceFileNames []string
 	headerFolders   []string
@@ -90,6 +93,7 @@ func resolveOSParams(jsonObj CommonBuildJSON) (resolvedJson CommonBuildJSON) {
 	resolvedJson.OutFolder = returnDefaultIfEmpty(resolveJsonObj.OutFolder, jsonObj.OutFolder)
 	resolvedJson.StaticLibs = append(jsonObj.StaticLibs, resolveJsonObj.StaticLibs...)
 	resolvedJson.SharedLibs = append(jsonObj.SharedLibs, resolveJsonObj.SharedLibs...)
+	resolvedJson.ExcludeSrc = append(jsonObj.ExcludeSrc, resolveJsonObj.ExcludeSrc...)
 	resolvedJson.SrcFolders = append(jsonObj.SrcFolders, resolveJsonObj.SrcFolders...)
 	resolvedJson.HeadersFolders = append(jsonObj.HeadersFolders, resolveJsonObj.HeadersFolders...)
 	resolvedJson.ExternIncludes = append(jsonObj.ExternIncludes, resolveJsonObj.ExternIncludes...)
@@ -135,7 +139,7 @@ func resolveBuilderOSParams(jsonObj BuilderJSON) (resolvedJson BuilderJSON) {
 
 func makeStaticLibType(folderInfos VolundBuildFolder) *StaticLibType {
 	staticLib := new(StaticLibType)
-	jsonObj := getBuildFileJSONObj(folderInfos)
+	jsonObj := getFileJSONObj(folderInfos)
 
 	commonBuildObj := resolveOSParams(jsonObj.StaticLib)
 	staticLib.folderInfos = folderInfos
@@ -147,6 +151,7 @@ func makeStaticLibType(folderInfos VolundBuildFolder) *StaticLibType {
 	staticLib.externIncludes = commonBuildObj.ExternIncludes
 	staticLib.externLibs = commonBuildObj.ExternLibs
 	staticLib.compilerFlags = commonBuildObj.CompilerFlags
+	staticLib.excludeSrc = commonBuildObj.ExcludeSrc
 	staticLib.isBuilt = false
 
 	success, _ := exists(staticLib.outFolder)
@@ -161,7 +166,7 @@ func makeStaticLibType(folderInfos VolundBuildFolder) *StaticLibType {
 
 func makeSharedLibType(folderInfos VolundBuildFolder) *SharedLibType {
 	sharedLib := new(SharedLibType)
-	jsonObj := getBuildFileJSONObj(folderInfos)
+	jsonObj := getFileJSONObj(folderInfos)
 
 	commonBuildObj := resolveOSParams(jsonObj.SharedLib)
 	sharedLib.folderInfos = folderInfos
@@ -173,6 +178,8 @@ func makeSharedLibType(folderInfos VolundBuildFolder) *SharedLibType {
 	sharedLib.externIncludes = commonBuildObj.ExternIncludes
 	sharedLib.externLibs = commonBuildObj.ExternLibs
 	sharedLib.compilerFlags = commonBuildObj.CompilerFlags
+	sharedLib.excludeSrc = commonBuildObj.ExcludeSrc
+	sharedLib.isBuilt = false
 
 	success, _ := exists(sharedLib.outFolder)
 	if !success {
@@ -186,7 +193,7 @@ func makeSharedLibType(folderInfos VolundBuildFolder) *SharedLibType {
 
 func makeBinaryType(folderInfos VolundBuildFolder, outBinary string) *BinaryType {
 	binary := new(BinaryType)
-	jsonObj := getBuildFileJSONObj(folderInfos)
+	jsonObj := getFileJSONObj(folderInfos)
 
 	commonBuildObj := resolveOSParams(jsonObj.Binary)
 	binary.folderInfos = folderInfos
@@ -200,6 +207,8 @@ func makeBinaryType(folderInfos VolundBuildFolder, outBinary string) *BinaryType
 	binary.externIncludes = commonBuildObj.ExternIncludes
 	binary.externLibs = commonBuildObj.ExternLibs
 	binary.compilerFlags = commonBuildObj.CompilerFlags
+	binary.excludeSrc = commonBuildObj.ExcludeSrc
+	binary.isBuilt = false
 
 	success, _ := exists(binary.outFolder)
 	if !success {

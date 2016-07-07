@@ -133,7 +133,7 @@ func getAllFilesFromDir(folderPath string, extension string) (finalFiles []strin
 	return
 }
 
-func getBuildFileJSONObj(folder VolundBuildFolder) ObjectJSON {
+func getFileJSONObj(folder VolundBuildFolder) ObjectJSON {
 	var subFolderVolundJSON ObjectJSON
 	json.Unmarshal(folder.volundBuildFile, &subFolderVolundJSON)
 	return subFolderVolundJSON
@@ -175,7 +175,7 @@ func getStaticLibsLinks(libsToLink []string, libs []*StaticLibType, avoidLib str
 		//		fmt.Printf("GetStaticLibsLinks Libs: %s\n", staticLib.name)
 		if (staticLib.name != avoidLib) && (contains(libsToLink, staticLib.name)) {
 			path := "-L" + staticLib.outFolder
-			name := "-l" + staticLib.outFolder + "/" + staticLib.name + getStaticLibOSExtension()
+			name := "-l" + staticLib.outFolder + "/" + staticLib.name //+ getStaticLibOSExtension()
 
 			linkIncludes = append(linkIncludes, "-I"+"./"+staticLib.name+"/.")
 			for _, includeHeader := range staticLib.headerFolders {
@@ -205,6 +205,22 @@ func isValidToolchain(testToolchain string) bool {
 	}
 
 	return false
+}
+
+func resolveBuildType(jsonOBJ *ObjectJSON, buildFolder *VolundBuildFolder, binaries *[]string,
+	staticLibs *[]string, sharedLibs *[]string) bool {
+
+	if jsonOBJ.Binary.Name != "" && contains(*binaries, jsonOBJ.Binary.Name) {
+		buildFolder.buildType = BINARY
+	} else if jsonOBJ.SharedLib.Name != "" && contains(*sharedLibs, jsonOBJ.SharedLib.Name) {
+		buildFolder.buildType = SHARED_LIB
+	} else if jsonOBJ.StaticLib.Name != "" && contains(*staticLibs, jsonOBJ.StaticLib.Name) {
+		buildFolder.buildType = STATIC_LIB
+	} else {
+		buildFolder.buildType = NONE
+		return false
+	}
+	return true
 }
 
 func getRuntimeOS() VolundOSType {

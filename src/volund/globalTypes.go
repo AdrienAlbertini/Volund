@@ -11,7 +11,7 @@ const (
 	BINARY VolundBuildType = iota
 	STATIC_LIB
 	SHARED_LIB
-	Builder
+	BUILDER
 	NONE
 )
 

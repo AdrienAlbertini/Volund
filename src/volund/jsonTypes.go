@@ -46,6 +46,7 @@ type CommonBuildJSON struct {
 	StaticLibs     []string             `json:"staticLibs"`
 	SharedLibs     []string             `json:"sharedLibs"`
 	SrcFolders     []string             `json:"srcFolders"`
+	ExcludeSrc     []string             `json:"excludeSrc"`
 	HeadersFolders []string             `json:"headersFolders"`
 	ExternIncludes []string             `json:"externIncludes"`
 	ExternLibs     []string             `json:"externLibs"`
@@ -62,6 +63,7 @@ type OSSpecificParamsJSON struct {
 	StaticLibs     []string `json:"staticLibs"`
 	SharedLibs     []string `json:"sharedLibs"`
 	SrcFolders     []string `json:"srcFolders"`
+	ExcludeSrc     []string `json:"excludeSrc"`
 	HeadersFolders []string `json:"headersFolders"`
 	ExternIncludes []string `json:"externIncludes"`
 	ExternLibs     []string `json:"externLibs"`
