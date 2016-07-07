@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"reflect"
 )
 
 type BinaryType struct {
@@ -19,6 +18,7 @@ type BinaryType struct {
 	compilerFlags   []string
 	outFolder       string
 	isOutBinary     bool
+	isBuilt         bool
 }
 
 type StaticLibType struct {
@@ -50,6 +50,7 @@ type SharedLibType struct {
 	externLibs      []string
 	compilerFlags   []string
 	outFolder       string
+	isBuilt         bool
 }
 
 type BuilderType struct {
@@ -60,14 +61,6 @@ type BuilderType struct {
 	sharedLibs       []SharedLibType
 	sharedLibsFolder string
 	outFolder        string
-}
-
-func (s OSSpecificParamsJSON) IsEmpty() bool {
-	return reflect.DeepEqual(s, OSSpecificParamsJSON{})
-}
-
-func (s BuilderOSSpecificJSON) IsEmpty() bool {
-	return reflect.DeepEqual(s, BuilderOSSpecificJSON{})
 }
 
 func resolveOSParams(jsonObj CommonBuildJSON) (resolvedJson CommonBuildJSON) {
@@ -109,6 +102,7 @@ func resolveBuilderOSParams(jsonObj BuilderJSON) (resolvedJson BuilderJSON) {
 	var resolveJsonObj BuilderOSSpecificJSON
 
 	resolvedJson = jsonObj
+
 	switch osType {
 	case WINDOWS:
 		if jsonObj.Windows.IsEmpty() {

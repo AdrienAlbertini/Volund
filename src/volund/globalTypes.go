@@ -4,7 +4,7 @@ type VolundToolchainType int64
 type VolundOSType int64
 type VolundBuildType int64
 
-const OBAKE_BS_FILENAME string = "VolundBuild.json"
+const VOLUND_BUILD_FILENAME string = "VolundBuild.json"
 const DEFAULT_TOOLCHAIN string = "clang++"
 
 const (

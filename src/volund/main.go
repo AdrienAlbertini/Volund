@@ -68,6 +68,7 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 		return false
 	}
 	fmt.Printf("%s\n\n", out)
+	binary.isBuilt = true
 
 	return true
 }
@@ -89,7 +90,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 		buildAndGetObjectFiles(staticLibTypeToObjType(*staticLib, staticLib.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 		if objSuccess == false {
-			boldRed.Printf("Build StaticLib: %s FAILED\n\n", staticLib.name)
+			boldRed.Printf("ERROR: Build StaticLib: %s FAILED\n\n", staticLib.name)
 			return false
 		}
 
@@ -111,7 +112,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 		cmd := exec.Command("ar", args...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			boldRed.Printf("StaticLib: %s | Error: %s\n\n", staticLib.name, fmt.Sprint(err))
+			boldRed.Printf("ERROR: StaticLib: %s | Linker Error: %s\n\n", staticLib.name, fmt.Sprint(err))
 			fmt.Printf("%s\n", string(out))
 			return false
 		}
@@ -124,9 +125,9 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 func handlesharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 
-	boldCyan.Printf("(%d files) Compiling sharedLib: %s\n", len(sharedLib.sources), sharedLib.name)
+	boldCyan.Printf("(%d files) Compiling SharedLib: %s\n", len(sharedLib.sources), sharedLib.name)
 
-	_, linkNames, linkIncludes := getStaticLibsLinks(sharedLib.staticLibs, allLibs, "")
+	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(sharedLib.staticLibs, allLibs, "")
 
 	if buildDependencies(sharedLib.staticLibs, allLibs) == false {
 		return false
@@ -137,7 +138,7 @@ func handlesharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 	buildAndGetObjectFiles(sharedLibTypeToObjType(*sharedLib, sharedLib.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 	if objSuccess == false {
-		boldRed.Printf("Build sharedLib: %s FAILED\n\n", sharedLib.name)
+		boldRed.Printf("ERROR: Build SharedLib: %s FAILED\n\n", sharedLib.name)
 		return false
 	}
 
@@ -149,7 +150,7 @@ func handlesharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 	args = append(args, objectFilesPath...)
 
 	args = append(args, linkIncludes...)
-	//	args = append(args, linkPaths...)
+	args = append(args, linkPaths...)
 	args = append(args, linkNames...)
 	args = append(args, sharedLib.compilerFlags...)
 
@@ -160,22 +161,24 @@ func handlesharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		boldRed.Printf("sharedLib: %s | Error: %s\n\n", sharedLib.name, fmt.Sprint(err.Error()))
+		boldRed.Printf("ERROR: SharedLib: %s | Error: %s\n\n", sharedLib.name, fmt.Sprint(err.Error()))
 		fmt.Printf("Out: %s\n\n", out)
 		return false
 	}
 	fmt.Printf("Out: %s\n\n", out)
+	sharedLib.isBuilt = true
 
 	return true
 }
 
-func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
+func handleBuilder(outBinaryError bool, builder BuilderJSON, binaries []*BinaryType,
 	staticLibs []*StaticLibType, sharedLibs []*SharedLibType) bool {
 	outBinaryFound := false
 	var outBinary *BinaryType
 
 	for _, binary := range binaries {
-		if binary.isOutBinary == true {
+		fmt.Printf("OutBinary: %s | CurrentBinary: %s\n", builder.OutBinary, binary.name)
+		if builder.OutBinary == binary.name {
 			outBinary = binary
 			outBinaryFound = true
 			break
@@ -183,7 +186,11 @@ func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
 	}
 
 	if outBinaryFound == false {
-		boldYellow.Printf("Out Binary not found\n")
+		if outBinaryError {
+			boldRed.Printf("ERROR: Out Binary Build FAILED\n")
+		} else {
+			boldYellow.Printf("Out Binary not found\n")
+		}
 		return false
 	}
 
@@ -218,17 +225,23 @@ func handleBuilder(builder BuilderJSON, binaries []*BinaryType,
 	return true
 }
 
-func handleFiles(rootOBSFile []byte, subFiles []VolundBuildFolder) {
+func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 	var binaries []*BinaryType
 	var staticLibs []*StaticLibType
 	var sharedLibs []*SharedLibType
 	var volundRootFileObj ObjectJSON
+	outBinaryError := false
 
-	json.Unmarshal(rootOBSFile, &volundRootFileObj)
-	//fmt.Printf("RootOBSFile: %v\n", volundRootFileObj)
-	volundRootFileObj.Builder = resolveBuilderOSParams(volundRootFileObj.Builder)
+	json.Unmarshal(rootVolundFile, &volundRootFileObj)
+
+	if volundRootFileObj.IsEmpty() || volundRootFileObj.Builder.IsEmpty() {
+		boldRed.Printf("ERROR : Can't parse builder json\n")
+		return
+	}
 
 	osType = getOsType(volundRootFileObj.Builder.Os)
+	//	volundRootFileObj.Builder = resolveBuilderOSParams(volundRootFileObj.Builder)
+
 	compilerFlags = volundRootFileObj.Builder.CompilerFlags
 	if contains(volundRootFileObj.Builder.Binaries, volundRootFileObj.Builder.OutBinary) == false {
 		volundRootFileObj.Builder.Binaries = append(volundRootFileObj.Builder.Binaries, volundRootFileObj.Builder.OutBinary)
@@ -251,19 +264,21 @@ func handleFiles(rootOBSFile []byte, subFiles []VolundBuildFolder) {
 		for _, buildFolder := range subFiles {
 
 			boldGreen.Print("ReadFile: ")
-			fmt.Printf("%s\n", "./"+buildFolder.name+"/"+OBAKE_BS_FILENAME)
-			buildFolder.volundBuildFile, _ = ioutil.ReadFile("./" + buildFolder.name + "/" + OBAKE_BS_FILENAME)
+			fmt.Printf("%s\n", "./"+buildFolder.name+"/"+VOLUND_BUILD_FILENAME)
+			buildFolder.volundBuildFile, _ = ioutil.ReadFile("./" + buildFolder.name + "/" + VOLUND_BUILD_FILENAME)
 			volundCurrentFile := getBuildFileJSONObj(buildFolder)
 
-			if volundCurrentFile.Binary.Name != "" {
+			if volundCurrentFile.Binary.IsEmpty() == false {
 				buildFolder.buildType = BINARY
 				binaries = append(binaries, makeBinaryType(buildFolder, volundRootFileObj.Builder.OutBinary))
-			} else if volundCurrentFile.SharedLib.Name != "" {
+			} else if volundCurrentFile.SharedLib.IsEmpty() == false {
 				buildFolder.buildType = SHARED_LIB
 				sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
-			} else if volundCurrentFile.StaticLib.Name != "" {
+			} else if volundCurrentFile.StaticLib.IsEmpty() == false {
 				buildFolder.buildType = STATIC_LIB
 				staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
+			} else {
+				boldYellow.Printf("WARNING : Can't parse json: %s\n", "./"+buildFolder.name+"/"+VOLUND_BUILD_FILENAME)
 			}
 		}
 
@@ -289,18 +304,21 @@ func handleFiles(rootOBSFile []byte, subFiles []VolundBuildFolder) {
 		for i, binaryType := range binaries {
 			if contains(volundRootFileObj.Builder.Binaries, binaryType.name) == false || handleBinary(binaryType, staticLibs) == false {
 				binaries = append(binaries[:i], binaries[i+1:]...)
+				if volundRootFileObj.Builder.OutBinary == binaryType.name {
+					outBinaryError = true
+				}
 			}
 		}
 
-		handleBuilder(volundRootFileObj.Builder, binaries, staticLibs, sharedLibs)
+		handleBuilder(outBinaryError, volundRootFileObj.Builder, binaries, staticLibs, sharedLibs)
 	}
 }
 
 func main() {
 	//	var argsWithProg []string = os.Args
 	var subFiles []VolundBuildFolder
-	var rootOBSFile []byte
-	var subOBSFile []byte
+	var rootVolundFile []byte
+	var subVolundFile []byte
 
 	// argsWithProg = os.Args[1:]
 
@@ -321,13 +339,13 @@ func main() {
 				subfolderName := filename
 				for _, file := range files {
 					filename = file.Name()
-					if filename == OBAKE_BS_FILENAME {
+					if filename == VOLUND_BUILD_FILENAME {
 
 						//	fmt.Printf("	Volund SubBuild File Found\n")
-						subOBSFile, _ = ioutil.ReadFile(filename)
+						subVolundFile, _ = ioutil.ReadFile(filename)
 						var subFolderInfo VolundBuildFolder
 						subFolderInfo.buildType = NONE
-						subFolderInfo = VolundBuildFolder{path: "./" + subfolderName, name: subfolderName, volundBuildFile: subOBSFile}
+						subFolderInfo = VolundBuildFolder{path: "./" + subfolderName, name: subfolderName, volundBuildFile: subVolundFile}
 						subFiles = append(subFiles, subFolderInfo)
 					}
 				}
@@ -335,12 +353,12 @@ func main() {
 				fmt.Printf("ERR: %s\n", err)
 				log.Fatal(err)
 			}
-		} else if filename == OBAKE_BS_FILENAME {
-			rootOBSFile, _ = ioutil.ReadFile(filename)
+		} else if filename == VOLUND_BUILD_FILENAME {
+			rootVolundFile, _ = ioutil.ReadFile(filename)
 			//	fmt.Printf("Volund RootBuild File Found\n\n")
 
 		}
 	}
 
-	handleFiles(rootOBSFile, subFiles)
+	handleFiles(rootVolundFile, subFiles)
 }

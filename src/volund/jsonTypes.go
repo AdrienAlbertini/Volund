@@ -1,5 +1,9 @@
 package main
 
+import (
+	"reflect"
+)
+
 type ObjectJSON struct {
 	Builder   BuilderJSON     `json:"Builder"`
 	Binary    CommonBuildJSON `json:"Binary"`
@@ -62,4 +66,24 @@ type OSSpecificParamsJSON struct {
 	ExternIncludes []string `json:"externIncludes"`
 	ExternLibs     []string `json:"externLibs"`
 	CompilerFlags  []string `json:"compilerFlags"`
+}
+
+func (s ObjectJSON) IsEmpty() bool {
+	return reflect.DeepEqual(s, ObjectJSON{})
+}
+
+func (s BuilderJSON) IsEmpty() bool {
+	return reflect.DeepEqual(s, BuilderJSON{})
+}
+
+func (s BuilderOSSpecificJSON) IsEmpty() bool {
+	return reflect.DeepEqual(s, BuilderOSSpecificJSON{})
+}
+
+func (s CommonBuildJSON) IsEmpty() bool {
+	return reflect.DeepEqual(s, CommonBuildJSON{})
+}
+
+func (s OSSpecificParamsJSON) IsEmpty() bool {
+	return reflect.DeepEqual(s, OSSpecificParamsJSON{})
 }

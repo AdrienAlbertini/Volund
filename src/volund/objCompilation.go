@@ -100,7 +100,7 @@ func getObjFileArgs(objType ObjFileRequirement, fileID int, srcFilePath string) 
 	args = append(args, linkIncludes...)
 	args = append(args, linkNames...)
 
-	//args = append(args, getExternIncludesArgs(objType.externIncludes)...)
+	args = append(args, getExternIncludesArgs(objType.externIncludes)...)
 	args = append(args, getExternLibsArgs(objType.externLibs)...)
 	args = append(args, objType.compilerFlags...)
 	return
