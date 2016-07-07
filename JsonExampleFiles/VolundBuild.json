@@ -5,10 +5,13 @@
      "toolchain": "clang++",
      "binaries": ["SimpleBinaryExample"],
      "staticLibs": ["StaticLibExample"],
-     "plugins": ["PluginExample"],
+     "sharedLibs": ["SharedLibExample"],
      "outBinary": "OutBinaryExample",
      "outPluginsFolder": "Plugins",
-     "compilerFlags": ["-fms-compatibility-version=19.00"],
-     "outFolder": "Bin"
+     "outFolder": "Bin",
+     "Windows":
+     {
+       "compilerFlags": ["-fms-compatibility-version=19.00"]
+     }
    }
 }

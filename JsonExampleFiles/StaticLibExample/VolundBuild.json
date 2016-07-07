@@ -1,7 +1,7 @@
 {
   "StaticLib":
    {
-     "name": "StaticLibExemple",
+     "name": "StaticLibExample",
      "srcFolders": ["."],
      "srcExtension": ".cpp",
      "headersFolders": ["."],

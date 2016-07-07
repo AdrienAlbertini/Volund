@@ -1,7 +1,7 @@
 {
-  "Plugin":
+  "SharedLib":
    {
-     "name": "Plugin",
+     "name": "SharedLibExample",
      "srcFolders": ["."],
      "staticLibs": ["StaticLib"],
      "srcExtension": ".cpp",
