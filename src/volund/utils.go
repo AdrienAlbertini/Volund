@@ -207,17 +207,22 @@ func isValidToolchain(testToolchain string) bool {
 	return false
 }
 
+func getRuntimeOS() VolundOSType {
+	switch runtime.GOOS {
+	case "windows":
+		return WINDOWS
+	case "linux":
+		return LINUX
+	case "darwin":
+		return OSX
+	}
+	return UNKNOWN
+}
+
 func getOsType(osStr string) VolundOSType {
 	switch osStr {
 	case "Auto":
-		switch runtime.GOOS {
-		case "windows":
-			return WINDOWS
-		case "linux":
-			return LINUX
-		case "darwin":
-			return OSX
-		}
+		return getRuntimeOS()
 	case "Windows":
 		return WINDOWS
 	case "Linux":

@@ -240,7 +240,16 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 	}
 
 	osType = getOsType(volundRootFileObj.Builder.Os)
+
+	if osType == UNKNOWN {
+		osType = getRuntimeOS()
+	}
 	//	volundRootFileObj.Builder = resolveBuilderOSParams(volundRootFileObj.Builder)
+
+	if osType == UNKNOWN {
+		boldRed.Printf("ERROR: OS not supported", osType.ToString(), toolchain)
+		return
+	}
 
 	compilerFlags = volundRootFileObj.Builder.CompilerFlags
 	if contains(volundRootFileObj.Builder.Binaries, volundRootFileObj.Builder.OutBinary) == false {
@@ -257,6 +266,7 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 	} else {
 		toolchain = DEFAULT_TOOLCHAIN
 	}
+
 	boldRed.Printf("Volund: OS: %s | Toolchain: %s\n", osType.ToString(), toolchain)
 	//	fmt.Printf("SubFilesNB: %d\n", len(subFiles))
 
