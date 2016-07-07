@@ -350,7 +350,6 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 
 		for i := 0; i < len(binaries); i++ {
 			binaryType := binaries[i]
-			fmt.Printf("Binary[%d]: %s\n", i, binaryType.name)
 			if contains(volundRootFileObj.Builder.Binaries, binaryType.name) == false || handleBinary(binaryType, staticLibs) == false {
 				binaries = append(binaries[:i], binaries[i+1:]...)
 				if volundRootFileObj.Builder.OutBinary == binaryType.name {
