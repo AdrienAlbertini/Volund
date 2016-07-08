@@ -24,28 +24,28 @@ func buildDependencies(staticLibs []string, allLibs []*StaticLibType) bool {
 	return true
 }
 
-func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
+func handleExecutable(executable *ExecutableType, allLibs []*StaticLibType) bool {
 
-	_, linkNames, linkIncludes := getStaticLibsLinks(binary.staticLibs, allLibs, binary.name)
+	_, linkNames, linkIncludes := getStaticLibsLinks(executable.staticLibsDeps, allLibs, executable.targetName)
 
-	boldCyan.Printf("(%d files) Compiling Binary: %s\n", len(binary.sources), binary.name)
+	boldCyan.Printf("(%d files) Compiling Executable: %s\n", len(executable.src), executable.targetName)
 
-	if buildDependencies(binary.staticLibs, allLibs) == false {
+	if buildDependencies(executable.staticLibsDeps, allLibs) == false {
 		return false
 	}
 
 	var objSuccess bool
 	var objectFilesPath []string
-	buildAndGetObjectFiles(binaryTypeToObjType(*binary, binary.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
+	buildAndGetObjectFiles(executableTypeToObjType(*executable, executable.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 	if objSuccess == false {
-		boldRed.Printf("ERROR: Build Binary: %s FAILED\n\n", binary.name)
+		boldRed.Printf("ERROR: Build Executable: %s FAILED\n\n", executable.targetName)
 		return false
 	}
 
-	binaryExtension := getBinaryOSExtension()
+	executableExtension := getExecutableOSExtension()
 
-	args := []string{"-o", binary.outFolder + "/" + binary.name + binaryExtension}
+	args := []string{"-o", executable.outFolder + "/" + executable.targetName + executableExtension}
 
 	args = append(args, compilerFlags...)
 	args = append(args, objectFilesPath...)
@@ -53,28 +53,28 @@ func handleBinary(binary *BinaryType, allLibs []*StaticLibType) bool {
 	args = append(args, linkIncludes...)
 	//	args = append(args, linkPaths...)
 	args = append(args, linkNames...)
-	args = append(args, binary.compilerFlags...)
+	args = append(args, executable.compilerFlags...)
 
-	//args = append(args, getExternIncludesArgs(binary.externIncludes)...)
-	args = append(args, getExternLibsArgs(binary.externLibs)...)
+	args = append(args, getExternIncludesArgs(executable.externIncludes)...)
+	args = append(args, getLibsArgs(executable.externLibs)...)
 
-	fmt.Printf("Handle Binary args: %v\n", args)
+	fmt.Printf("Handle Executable args: %v\n", args)
 
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		boldRed.Printf("ERROR: Binary: %s | Error: %s\n\n", binary.name, fmt.Sprint(err))
+		boldRed.Printf("ERROR: Executable: %s | Error: %s\n\n", executable.targetName, fmt.Sprint(err))
 		fmt.Printf("%s\n", string(out))
 		return false
 	}
 
 	if osType == OSX || osType == LINUX {
-		args = []string{"+x", binary.outFolder + "/" + binary.name + binaryExtension}
+		args = []string{"+x", executable.outFolder + "/" + executable.targetName + executableExtension}
 		exec.Command("chmod", args...).Run()
 	}
 
 	fmt.Printf("%s\n\n", out)
-	binary.isBuilt = true
+	executable.isBuilt = true
 
 	return true
 }
@@ -83,11 +83,11 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 	if staticLib.isBuilt == false {
 
-		boldCyan.Printf("(%d files) Compiling StaticLib: %s\n", len(staticLib.sources), staticLib.name)
+		boldCyan.Printf("(%d files) Compiling StaticLib: %s\n", len(staticLib.src), staticLib.targetName)
 
 		//	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(staticLib.staticLibs, allLibs, staticLib.name)
 
-		if buildDependencies(staticLib.staticLibs, allLibs) == false {
+		if buildDependencies(staticLib.staticLibsDeps, allLibs) == false {
 			return false
 		}
 
@@ -96,13 +96,13 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 		buildAndGetObjectFiles(staticLibTypeToObjType(*staticLib, staticLib.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 		if objSuccess == false {
-			boldRed.Printf("ERROR: Build StaticLib: %s FAILED\n\n", staticLib.name)
+			boldRed.Printf("ERROR: Build StaticLib: %s FAILED\n\n", staticLib.targetName)
 			return false
 		}
 
 		staticLibExtension := getStaticLibOSExtension()
 
-		args := []string{"rcs", staticLib.outFolder + "/" + staticLib.name + staticLibExtension}
+		args := []string{"rcs", staticLib.outFolder + "/" + staticLib.targetName + staticLibExtension}
 
 		args = append(args, objectFilesPath...)
 
@@ -118,7 +118,7 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 		cmd := exec.Command("ar", args...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			boldRed.Printf("ERROR: StaticLib: %s | Linker Error: %s\n\n", staticLib.name, fmt.Sprint(err))
+			boldRed.Printf("ERROR: StaticLib: %s | Linker Error: %s\n\n", staticLib.targetName, fmt.Sprint(err))
 			fmt.Printf("%s\n", string(out))
 			return false
 		}
@@ -131,11 +131,11 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 func handleSharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 
-	boldCyan.Printf("(%d files) Compiling SharedLib: %s\n", len(sharedLib.sources), sharedLib.name)
+	boldCyan.Printf("(%d files) Compiling SharedLib: %s\n", len(sharedLib.src), sharedLib.targetName)
 
-	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(sharedLib.staticLibs, allLibs, "")
+	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(sharedLib.staticLibsDeps, allLibs, "")
 
-	if buildDependencies(sharedLib.staticLibs, allLibs) == false {
+	if buildDependencies(sharedLib.staticLibsDeps, allLibs) == false {
 		return false
 	}
 
@@ -144,11 +144,11 @@ func handleSharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 	buildAndGetObjectFiles(sharedLibTypeToObjType(*sharedLib, sharedLib.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
 
 	if objSuccess == false {
-		boldRed.Printf("ERROR: Build SharedLib: %s FAILED\n\n", sharedLib.name)
+		boldRed.Printf("ERROR: Build SharedLib: %s FAILED\n\n", sharedLib.targetName)
 		return false
 	}
 
-	sharedLibLibExtension := getSharedLibOsExtension()
+	sharedLibExtension := getSharedLibOsExtension()
 
 	osSharedFlag := "-shared"
 
@@ -157,7 +157,7 @@ func handleSharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 		osSharedFlag = "-fPIC"
 	}
 
-	args := []string{osSharedFlag, "-o", sharedLib.outFolder + "/" + sharedLib.name + sharedLibLibExtension}
+	args := []string{osSharedFlag, "-o", sharedLib.outFolder + "/" + sharedLib.targetName + sharedLibExtension}
 
 	args = append(args, compilerFlags...)
 	args = append(args, objectFilesPath...)
@@ -167,14 +167,14 @@ func handleSharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 	args = append(args, linkNames...)
 	args = append(args, sharedLib.compilerFlags...)
 
-	args = append(args, getExternLibsArgs(sharedLib.externLibs)...)
+	args = append(args, getLibsArgs(sharedLib.externLibs)...)
 
 	fmt.Printf("Handle sharedLib args: %v\n", args)
 
 	cmd := exec.Command(toolchain, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		boldRed.Printf("ERROR: SharedLib: %s | Error: %s\n\n", sharedLib.name, fmt.Sprint(err.Error()))
+		boldRed.Printf("ERROR: SharedLib: %s | Error: %s\n\n", sharedLib.targetName, fmt.Sprint(err.Error()))
 		fmt.Printf("Out: %s\n\n", out)
 		return false
 	}
@@ -184,22 +184,22 @@ func handleSharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
 	return true
 }
 
-func handleBuilder(outBinaryError bool, builder BuilderJSON, binaries []*BinaryType,
+func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*ExecutableType,
 	staticLibs []*StaticLibType, sharedLibs []*SharedLibType) bool {
-	outBinaryFound := false
-	var outBinary *BinaryType
+	mainExecutableFound := false
+	var mainExecutable *ExecutableType
 
-	for _, binary := range binaries {
-		fmt.Printf("OutBinary: %s | CurrentBinary: %s\n", builder.OutBinary, binary.name)
-		if builder.OutBinary == binary.name {
-			outBinary = binary
-			outBinaryFound = true
+	for _, executable := range executables {
+		fmt.Printf("OutBinary: %s | CurrentExecutable: %s\n", builder.MainExecutable, executable.targetName)
+		if builder.MainExecutable == executable.targetName {
+			mainExecutable = executable
+			mainExecutableFound = true
 			break
 		}
 	}
 
-	if outBinaryFound == false {
-		if outBinaryError {
+	if mainExecutableFound == false {
+		if mainBinaryError {
 			boldRed.Printf("ERROR: Out Binary Build FAILED\n")
 		} else {
 			boldYellow.Printf("Out Binary not found\n")
@@ -207,31 +207,31 @@ func handleBuilder(outBinaryError bool, builder BuilderJSON, binaries []*BinaryT
 		return false
 	}
 
-	binaryExtension := getBinaryOSExtension()
+	binaryExtension := getExecutableOSExtension()
 	staticExtension := getStaticLibOSExtension()
 	sharedLibExtension := getSharedLibOsExtension()
 
-	success, _ := exists(builder.OutFolder)
+	success, _ := exists(builder.MainFolder)
 	if !success {
-		os.MkdirAll(builder.OutFolder, os.ModePerm)
+		os.MkdirAll(builder.MainFolder, os.ModePerm)
 	}
-	success, _ = exists(builder.OutFolder + "sharedLibs")
+	success, _ = exists(builder.MainFolder + "sharedLibs")
 	if !success {
-		os.MkdirAll(builder.OutFolder+"/sharedLibs", os.ModePerm)
+		os.MkdirAll(builder.MainFolder+"/sharedLibs", os.ModePerm)
 	}
 
 	boldCyan.Printf("\nCopying out binary files.\n")
-	copy(outBinary.outFolder+"/"+outBinary.name+binaryExtension, builder.OutFolder+"/"+outBinary.name+binaryExtension)
+	copy(mainExecutable.outFolder+"/"+mainExecutable.targetName+binaryExtension, builder.MainFolder+"/"+mainExecutable.targetName+binaryExtension)
 
 	for _, sharedLib := range sharedLibs {
-		if contains(outBinary.sharedLibs, sharedLib.name) {
-			copy(sharedLib.outFolder+"/"+sharedLib.name+sharedLibExtension, builder.OutFolder+"/sharedLibs/"+sharedLib.name+sharedLibExtension)
+		if contains(mainExecutable.sharedLibsDeps, sharedLib.targetName) {
+			copy(sharedLib.outFolder+"/"+sharedLib.targetName+sharedLibExtension, builder.MainFolder+"/sharedLibs/"+sharedLib.targetName+sharedLibExtension)
 		}
 	}
 
 	for _, lib := range staticLibs {
-		if contains(outBinary.staticLibs, lib.name) {
-			copy(lib.outFolder+"/"+lib.name+staticExtension, builder.OutFolder+lib.name+staticExtension)
+		if contains(mainExecutable.staticLibsDeps, lib.targetName) {
+			copy(lib.outFolder+"/"+lib.targetName+staticExtension, builder.MainFolder+lib.targetName+staticExtension)
 		}
 	}
 
@@ -239,11 +239,11 @@ func handleBuilder(outBinaryError bool, builder BuilderJSON, binaries []*BinaryT
 }
 
 func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
-	var binaries []*BinaryType
+	var executables []*ExecutableType
 	var staticLibs []*StaticLibType
 	var sharedLibs []*SharedLibType
 	var volundRootFileObj ObjectJSON
-	outBinaryError := false
+	mainExecutableError := false
 
 	json.Unmarshal(rootVolundFile, &volundRootFileObj)
 
@@ -265,8 +265,8 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 	}
 
 	compilerFlags = volundRootFileObj.Builder.CompilerFlags
-	if contains(volundRootFileObj.Builder.Binaries, volundRootFileObj.Builder.OutBinary) == false {
-		volundRootFileObj.Builder.Binaries = append(volundRootFileObj.Builder.Binaries, volundRootFileObj.Builder.OutBinary)
+	if contains(volundRootFileObj.Builder.Executables, volundRootFileObj.Builder.MainExecutable) == false {
+		volundRootFileObj.Builder.Executables = append(volundRootFileObj.Builder.Executables, volundRootFileObj.Builder.MainExecutable)
 	}
 
 	if volundRootFileObj.Builder.FullStatic {
@@ -274,8 +274,8 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 		volundRootFileObj.Builder.SharedLibs = []string{}
 	}
 
-	if isValidToolchain(volundRootFileObj.Builder.Toolchain) {
-		toolchain = volundRootFileObj.Builder.Toolchain
+	if isValidToolchain(volundRootFileObj.Builder.Compiler) {
+		toolchain = volundRootFileObj.Builder.Compiler
 	} else {
 		toolchain = DEFAULT_TOOLCHAIN
 	}
@@ -291,22 +291,22 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 			buildFolder.volundBuildFile, _ = ioutil.ReadFile("./" + buildFolder.name + "/" + VOLUND_BUILD_FILENAME)
 			volundCurrentFile := getFileJSONObj(buildFolder)
 
-			if resolveBuildType(&volundCurrentFile, &buildFolder, &volundRootFileObj.Builder.Binaries,
+			if resolveBuildType(&volundCurrentFile, &buildFolder, &volundRootFileObj.Builder.Executables,
 				&volundRootFileObj.Builder.StaticLibs, &volundRootFileObj.Builder.SharedLibs) {
 				switch buildFolder.buildType {
-				case BINARY:
-					binaries = append(binaries, makeBinaryType(buildFolder, volundRootFileObj.Builder.OutBinary))
-					if contains(volundRootFileObj.Builder.Binaries, volundCurrentFile.Binary.Name) {
+				case EXECUTABLE:
+					executables = append(executables, makeExecutableType(buildFolder, volundRootFileObj.Builder.MainExecutable))
+					if contains(volundRootFileObj.Builder.Executables, volundCurrentFile.Executable.TargetName) {
 						boldYellow.Printf("WARNING: will not be build (not present in Builder file).\n")
 					}
 				case SHARED_LIB:
 					sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
-					if contains(volundRootFileObj.Builder.SharedLibs, volundCurrentFile.SharedLib.Name) {
+					if contains(volundRootFileObj.Builder.SharedLibs, volundCurrentFile.SharedLib.TargetName) {
 						boldYellow.Printf("WARNING: will not be build (not present in Builder file).\n")
 					}
 				case STATIC_LIB:
 					staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
-					if contains(volundRootFileObj.Builder.StaticLibs, volundCurrentFile.StaticLib.Name) {
+					if contains(volundRootFileObj.Builder.StaticLibs, volundCurrentFile.StaticLib.TargetName) {
 						boldYellow.Printf("WARNING: will not be build (not present in Builder file).\n")
 					}
 				case NONE:
@@ -330,10 +330,10 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 			*/
 		}
 
-		var outBinary *BinaryType
-		for _, checkBinary := range binaries {
-			if checkBinary.name == volundRootFileObj.Builder.OutBinary {
-				outBinary = checkBinary
+		var mainExecutable *ExecutableType
+		for _, checkExecutable := range executables {
+			if checkExecutable.targetName == volundRootFileObj.Builder.MainExecutable {
+				mainExecutable = checkExecutable
 				break
 			}
 		}
@@ -341,31 +341,31 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 		fmt.Printf("\n")
 		for i := 0; i < len(staticLibs); i++ {
 			staticType := staticLibs[i]
-			if (contains(volundRootFileObj.Builder.StaticLibs, staticType.name) == false && contains(outBinary.staticLibs, staticType.name) == false) || handleStatic(staticType, staticLibs) == false {
+			if (contains(volundRootFileObj.Builder.StaticLibs, staticType.targetName) == false && contains(mainExecutable.staticLibsDeps, staticType.targetName) == false) || handleStatic(staticType, staticLibs) == false {
 				staticLibs = append(staticLibs[:i], staticLibs[i+1:]...)
 				i = -1
 			}
 		}
 		for i := 0; i < len(sharedLibs); i++ {
 			sharedLibType := sharedLibs[i]
-			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.name) == false && contains(outBinary.sharedLibs, sharedLibType.name) == false) || handleSharedLib(sharedLibType, staticLibs) == false {
+			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.targetName) == false && contains(mainExecutable.sharedLibsDeps, sharedLibType.targetName) == false) || handleSharedLib(sharedLibType, staticLibs) == false {
 				sharedLibs = append(sharedLibs[:i], sharedLibs[i+1:]...)
 				i = -1
 			}
 		}
 
-		for i := 0; i < len(binaries); i++ {
-			binaryType := binaries[i]
-			if contains(volundRootFileObj.Builder.Binaries, binaryType.name) == false || handleBinary(binaryType, staticLibs) == false {
-				binaries = append(binaries[:i], binaries[i+1:]...)
-				if volundRootFileObj.Builder.OutBinary == binaryType.name {
-					outBinaryError = true
+		for i := 0; i < len(executables); i++ {
+			executableType := executables[i]
+			if contains(volundRootFileObj.Builder.Executables, executableType.targetName) == false || handleExecutable(executableType, staticLibs) == false {
+				executables = append(executables[:i], executables[i+1:]...)
+				if volundRootFileObj.Builder.MainExecutable == executableType.targetName {
+					mainExecutableError = true
 				}
 				i = -1
 			}
 		}
 
-		handleBuilder(outBinaryError, volundRootFileObj.Builder, binaries, staticLibs, sharedLibs)
+		handleBuilder(mainExecutableError, volundRootFileObj.Builder, executables, staticLibs, sharedLibs)
 	}
 }
 

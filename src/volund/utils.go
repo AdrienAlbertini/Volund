@@ -64,10 +64,10 @@ func executeCommandWithPrintErr(command string, args []string) {
 	}
 }
 
-func getExternLibsArgs(externLibs []string) (args []string) {
-	if externLibs != nil {
-		for _, externLib := range externLibs {
-			args = append(args, "-l"+externLib)
+func getLibsArgs(libs []string) (args []string) {
+	if libs != nil {
+		for _, lib := range libs {
+			args = append(args, "-l"+lib)
 		}
 	}
 
@@ -76,7 +76,7 @@ func getExternLibsArgs(externLibs []string) (args []string) {
 
 func getStaticLibByName(staticLibName string, allLibs []*StaticLibType) (bool, *StaticLibType) {
 	for _, staticLib := range allLibs {
-		if staticLib.name == staticLibName {
+		if staticLib.targetName == staticLibName {
 			return true, staticLib
 		}
 	}
@@ -155,13 +155,13 @@ func getSharedLibOsExtension() string {
 	return LINUX_DYNAMIC_EXT
 }
 
-func getBinaryOSExtension() string {
+func getExecutableOSExtension() string {
 	if osType == WINDOWS {
-		return WINDOWS_BINARY_EXT
+		return WINDOWS_EXECUTABLE_EXT
 	} else if osType == OSX {
-		return OSX_BINARY_EXT
+		return OSX_EXECUTABLE_EXT
 	}
-	return LINUX_BINARY_EXT
+	return LINUX_EXECUTABLE_EXT
 }
 
 func getStaticLibsLinks(libsToLink []string, libs []*StaticLibType, avoidLib string) (linkPaths []string, linkNames []string,
@@ -173,13 +173,13 @@ func getStaticLibsLinks(libsToLink []string, libs []*StaticLibType, avoidLib str
 	for _, staticLib := range libs {
 
 		//		fmt.Printf("GetStaticLibsLinks Libs: %s\n", staticLib.name)
-		if (staticLib.name != avoidLib) && (contains(libsToLink, staticLib.name)) {
+		if (staticLib.targetName != avoidLib) && (contains(libsToLink, staticLib.targetName)) {
 			path := "-L" + staticLib.outFolder
-			name := staticLib.outFolder + "/" + staticLib.name + getStaticLibOSExtension()
+			name := staticLib.outFolder + "/" + staticLib.targetName + getStaticLibOSExtension()
 
-			linkIncludes = append(linkIncludes, "-I"+"./"+staticLib.name+"/.")
-			for _, includeHeader := range staticLib.headerFolders {
-				linkIncludes = append(linkIncludes, "-I"+"./"+staticLib.name+"/"+includeHeader)
+			linkIncludes = append(linkIncludes, "-I"+"./"+staticLib.targetName+"/.")
+			for _, includeHeader := range staticLib.headersFolders {
+				linkIncludes = append(linkIncludes, "-I"+"./"+staticLib.targetName+"/"+includeHeader)
 			}
 
 			linkPaths = append(linkPaths, path)
@@ -207,14 +207,14 @@ func isValidToolchain(testToolchain string) bool {
 	return false
 }
 
-func resolveBuildType(jsonOBJ *ObjectJSON, buildFolder *VolundBuildFolder, binaries *[]string,
+func resolveBuildType(jsonOBJ *ObjectJSON, buildFolder *VolundBuildFolder, executables *[]string,
 	staticLibs *[]string, sharedLibs *[]string) bool {
 
-	if jsonOBJ.Binary.Name != "" && contains(*binaries, jsonOBJ.Binary.Name) {
-		buildFolder.buildType = BINARY
-	} else if jsonOBJ.SharedLib.Name != "" && contains(*sharedLibs, jsonOBJ.SharedLib.Name) {
+	if jsonOBJ.Executable.TargetName != "" && contains(*executables, jsonOBJ.Executable.TargetName) {
+		buildFolder.buildType = EXECUTABLE
+	} else if jsonOBJ.SharedLib.TargetName != "" && contains(*sharedLibs, jsonOBJ.SharedLib.TargetName) {
 		buildFolder.buildType = SHARED_LIB
-	} else if jsonOBJ.StaticLib.Name != "" && contains(*staticLibs, jsonOBJ.StaticLib.Name) {
+	} else if jsonOBJ.StaticLib.TargetName != "" && contains(*staticLibs, jsonOBJ.StaticLib.TargetName) {
 		buildFolder.buildType = STATIC_LIB
 	} else {
 		buildFolder.buildType = NONE

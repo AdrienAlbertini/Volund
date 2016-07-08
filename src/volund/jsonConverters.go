@@ -4,66 +4,69 @@ import (
 	"os"
 )
 
-type BinaryType struct {
-	folderInfos     VolundBuildFolder
-	name            string
-	sourceExtension string
-	staticLibs      []string
-	sharedLibs      []string
-	excludeSrc      []string
-	sources         []string
-	sourceFileNames []string
-	headerFolders   []string
-	externIncludes  []string
-	externLibs      []string
-	compilerFlags   []string
-	outFolder       string
-	isOutBinary     bool
-	isBuilt         bool
+type ExecutableType struct {
+	folderInfos      VolundBuildFolder
+	targetName       string
+	srcExtension     string
+	staticLibsDeps   []string
+	sharedLibsDeps   []string
+	excludeSrc       []string
+	src              []string
+	srcFileNames     []string
+	headersFolders   []string
+	internLibs       []string
+	externIncludes   []string
+	externLibs       []string
+	compilerFlags    []string
+	outFolder        string
+	isMainExecutable bool
+	isBuilt          bool
 }
 
 type StaticLibType struct {
-	folderInfos     VolundBuildFolder
-	name            string
-	sourceExtension string
-	staticLibs      []string
-	sharedLibs      []string
-	excludeSrc      []string
-	sources         []string
-	sourceFileNames []string
-	headerFolders   []string
-	externIncludes  []string
-	externLibs      []string
-	compilerFlags   []string
-	outFolder       string
-	isBuilt         bool
+	folderInfos    VolundBuildFolder
+	targetName     string
+	srcExtension   string
+	staticLibsDeps []string
+	sharedLibsDeps []string
+	excludeSrc     []string
+	src            []string
+	srcFileNames   []string
+	headersFolders []string
+	internLibs     []string
+	externIncludes []string
+	externLibs     []string
+	compilerFlags  []string
+	outFolder      string
+	isBuilt        bool
 }
 
 type SharedLibType struct {
-	folderInfos     VolundBuildFolder
-	name            string
-	sourceExtension string
-	staticLibs      []string
-	sharedLibs      []string
-	excludeSrc      []string
-	sources         []string
-	sourceFileNames []string
-	headerFolders   []string
-	externIncludes  []string
-	externLibs      []string
-	compilerFlags   []string
-	outFolder       string
-	isBuilt         bool
+	folderInfos    VolundBuildFolder
+	targetName     string
+	srcExtension   string
+	staticLibsDeps []string
+	sharedLibsDeps []string
+	excludeSrc     []string
+	src            []string
+	srcFileNames   []string
+	headersFolders []string
+	internLibs     []string
+	externIncludes []string
+	externLibs     []string
+	compilerFlags  []string
+	outFolder      string
+	isBuilt        bool
 }
 
 type BuilderType struct {
-	os               VolundOSType
-	outBinary        BinaryType
-	binaries         []BinaryType
-	staticLibs       []StaticLibType
-	sharedLibs       []SharedLibType
-	sharedLibsFolder string
-	outFolder        string
+	os                   VolundOSType
+	mainExecutable       ExecutableType
+	executables          []ExecutableType
+	staticLibs           []StaticLibType
+	sharedLibs           []SharedLibType
+	mainSharedLibsFolder string
+	mainFolder           string
 }
 
 func resolveOSParams(jsonObj CommonBuildJSON) (resolvedJson CommonBuildJSON) {
@@ -88,14 +91,15 @@ func resolveOSParams(jsonObj CommonBuildJSON) (resolvedJson CommonBuildJSON) {
 		resolveJsonObj = jsonObj.OSX
 	}
 
-	resolvedJson.Name = returnDefaultIfEmpty(resolveJsonObj.Name, jsonObj.Name)
+	resolvedJson.TargetName = returnDefaultIfEmpty(resolveJsonObj.TargetName, jsonObj.TargetName)
 	resolvedJson.SrcExtension = returnDefaultIfEmpty(resolveJsonObj.SrcExtension, jsonObj.SrcExtension)
 	resolvedJson.OutFolder = returnDefaultIfEmpty(resolveJsonObj.OutFolder, jsonObj.OutFolder)
-	resolvedJson.StaticLibs = append(jsonObj.StaticLibs, resolveJsonObj.StaticLibs...)
-	resolvedJson.SharedLibs = append(jsonObj.SharedLibs, resolveJsonObj.SharedLibs...)
+	resolvedJson.StaticLibsDeps = append(jsonObj.StaticLibsDeps, resolveJsonObj.StaticLibsDeps...)
+	resolvedJson.SharedLibsDeps = append(jsonObj.SharedLibsDeps, resolveJsonObj.SharedLibsDeps...)
 	resolvedJson.ExcludeSrc = append(jsonObj.ExcludeSrc, resolveJsonObj.ExcludeSrc...)
 	resolvedJson.SrcFolders = append(jsonObj.SrcFolders, resolveJsonObj.SrcFolders...)
 	resolvedJson.HeadersFolders = append(jsonObj.HeadersFolders, resolveJsonObj.HeadersFolders...)
+	resolvedJson.InternLibs = append(jsonObj.InternLibs, resolveJsonObj.InternLibs...)
 	resolvedJson.ExternIncludes = append(jsonObj.ExternIncludes, resolveJsonObj.ExternIncludes...)
 	resolvedJson.ExternLibs = append(jsonObj.ExternLibs, resolveJsonObj.ExternLibs...)
 	resolvedJson.CompilerFlags = append(jsonObj.CompilerFlags, resolveJsonObj.CompilerFlags...)
@@ -125,11 +129,11 @@ func resolveBuilderOSParams(jsonObj BuilderJSON) (resolvedJson BuilderJSON) {
 		resolveJsonObj = jsonObj.OSX
 	}
 
-	resolvedJson.Toolchain = returnDefaultIfEmpty(resolveJsonObj.Toolchain, jsonObj.Toolchain)
-	resolvedJson.OutBinary = returnDefaultIfEmpty(resolveJsonObj.OutBinary, jsonObj.OutBinary)
-	resolvedJson.SharedLibsFolder = returnDefaultIfEmpty(resolveJsonObj.SharedLibsFolder, jsonObj.SharedLibsFolder)
-	resolvedJson.OutFolder = returnDefaultIfEmpty(resolveJsonObj.OutFolder, jsonObj.OutFolder)
-	resolvedJson.Binaries = append(jsonObj.Binaries, resolveJsonObj.Binaries...)
+	resolvedJson.Compiler = returnDefaultIfEmpty(resolveJsonObj.Compiler, jsonObj.Compiler)
+	resolvedJson.MainExecutable = returnDefaultIfEmpty(resolveJsonObj.MainExecutable, jsonObj.MainExecutable)
+	resolvedJson.MainFolder = returnDefaultIfEmpty(resolveJsonObj.MainFolder, jsonObj.MainFolder)
+	resolvedJson.MainSharedLibsFolder = returnDefaultIfEmpty(resolveJsonObj.MainSharedLibsFolder, jsonObj.MainSharedLibsFolder)
+	resolvedJson.Executables = append(jsonObj.Executables, resolveJsonObj.Executables...)
 	resolvedJson.StaticLibs = append(jsonObj.StaticLibs, resolveJsonObj.StaticLibs...)
 	resolvedJson.SharedLibs = append(jsonObj.SharedLibs, resolveJsonObj.SharedLibs...)
 	resolvedJson.CompilerFlags = append(jsonObj.CompilerFlags, resolveJsonObj.CompilerFlags...)
@@ -143,11 +147,11 @@ func makeStaticLibType(folderInfos VolundBuildFolder) *StaticLibType {
 
 	commonBuildObj := resolveOSParams(jsonObj.StaticLib)
 	staticLib.folderInfos = folderInfos
-	staticLib.name = commonBuildObj.Name
+	staticLib.targetName = commonBuildObj.TargetName
 	staticLib.outFolder = staticLib.folderInfos.path + "/" + commonBuildObj.OutFolder
-	staticLib.staticLibs = commonBuildObj.StaticLibs
-	staticLib.headerFolders = commonBuildObj.HeadersFolders
-	staticLib.sourceExtension = commonBuildObj.SrcExtension
+	staticLib.staticLibsDeps = commonBuildObj.StaticLibsDeps
+	staticLib.headersFolders = commonBuildObj.HeadersFolders
+	staticLib.srcExtension = commonBuildObj.SrcExtension
 	staticLib.externIncludes = commonBuildObj.ExternIncludes
 	staticLib.externLibs = commonBuildObj.ExternLibs
 	staticLib.compilerFlags = commonBuildObj.CompilerFlags
@@ -159,7 +163,7 @@ func makeStaticLibType(folderInfos VolundBuildFolder) *StaticLibType {
 		os.MkdirAll(staticLib.outFolder, os.ModePerm)
 	}
 
-	staticLib.sourceFileNames, staticLib.sources = getSourceFiles(commonBuildObj.SrcFolders, commonBuildObj.SrcExtension, folderInfos)
+	staticLib.srcFileNames, staticLib.src = getSourceFiles(commonBuildObj.SrcFolders, commonBuildObj.SrcExtension, folderInfos)
 
 	return staticLib
 }
@@ -170,11 +174,11 @@ func makeSharedLibType(folderInfos VolundBuildFolder) *SharedLibType {
 
 	commonBuildObj := resolveOSParams(jsonObj.SharedLib)
 	sharedLib.folderInfos = folderInfos
-	sharedLib.name = commonBuildObj.Name
+	sharedLib.targetName = commonBuildObj.TargetName
 	sharedLib.outFolder = sharedLib.folderInfos.path + "/" + commonBuildObj.OutFolder
-	sharedLib.staticLibs = commonBuildObj.StaticLibs
-	sharedLib.headerFolders = commonBuildObj.HeadersFolders
-	sharedLib.sourceExtension = commonBuildObj.SrcExtension
+	sharedLib.staticLibsDeps = commonBuildObj.StaticLibsDeps
+	sharedLib.headersFolders = commonBuildObj.HeadersFolders
+	sharedLib.srcExtension = commonBuildObj.SrcExtension
 	sharedLib.externIncludes = commonBuildObj.ExternIncludes
 	sharedLib.externLibs = commonBuildObj.ExternLibs
 	sharedLib.compilerFlags = commonBuildObj.CompilerFlags
@@ -186,36 +190,36 @@ func makeSharedLibType(folderInfos VolundBuildFolder) *SharedLibType {
 		os.MkdirAll(sharedLib.outFolder, os.ModePerm)
 	}
 
-	sharedLib.sourceFileNames, sharedLib.sources = getSourceFiles(commonBuildObj.SrcFolders, commonBuildObj.SrcExtension, folderInfos)
+	sharedLib.srcFileNames, sharedLib.src = getSourceFiles(commonBuildObj.SrcFolders, commonBuildObj.SrcExtension, folderInfos)
 
 	return sharedLib
 }
 
-func makeBinaryType(folderInfos VolundBuildFolder, outBinary string) *BinaryType {
-	binary := new(BinaryType)
+func makeExecutableType(folderInfos VolundBuildFolder, mainExecutable string) *ExecutableType {
+	executable := new(ExecutableType)
 	jsonObj := getFileJSONObj(folderInfos)
 
-	commonBuildObj := resolveOSParams(jsonObj.Binary)
-	binary.folderInfos = folderInfos
-	binary.name = commonBuildObj.Name
-	binary.isOutBinary = outBinary == binary.name
-	binary.outFolder = binary.folderInfos.path + "/" + commonBuildObj.OutFolder
-	binary.staticLibs = commonBuildObj.StaticLibs
-	binary.sharedLibs = commonBuildObj.SharedLibs
-	binary.headerFolders = commonBuildObj.HeadersFolders
-	binary.sourceExtension = commonBuildObj.SrcExtension
-	binary.externIncludes = commonBuildObj.ExternIncludes
-	binary.externLibs = commonBuildObj.ExternLibs
-	binary.compilerFlags = commonBuildObj.CompilerFlags
-	binary.excludeSrc = commonBuildObj.ExcludeSrc
-	binary.isBuilt = false
+	commonBuildObj := resolveOSParams(jsonObj.Executable)
+	executable.folderInfos = folderInfos
+	executable.targetName = commonBuildObj.TargetName
+	executable.isMainExecutable = mainExecutable == executable.targetName
+	executable.outFolder = executable.folderInfos.path + "/" + commonBuildObj.OutFolder
+	executable.staticLibsDeps = commonBuildObj.StaticLibsDeps
+	executable.sharedLibsDeps = commonBuildObj.SharedLibsDeps
+	executable.headersFolders = commonBuildObj.HeadersFolders
+	executable.srcExtension = commonBuildObj.SrcExtension
+	executable.externIncludes = commonBuildObj.ExternIncludes
+	executable.externLibs = commonBuildObj.ExternLibs
+	executable.compilerFlags = commonBuildObj.CompilerFlags
+	executable.excludeSrc = commonBuildObj.ExcludeSrc
+	executable.isBuilt = false
 
-	success, _ := exists(binary.outFolder)
+	success, _ := exists(executable.outFolder)
 	if !success {
-		os.MkdirAll(binary.outFolder, os.ModePerm)
+		os.MkdirAll(executable.outFolder, os.ModePerm)
 	}
 
-	binary.sourceFileNames, binary.sources = getSourceFiles(commonBuildObj.SrcFolders, commonBuildObj.SrcExtension, folderInfos)
+	executable.srcFileNames, executable.src = getSourceFiles(commonBuildObj.SrcFolders, commonBuildObj.SrcExtension, folderInfos)
 
-	return binary
+	return executable
 }

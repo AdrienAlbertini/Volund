@@ -11,18 +11,20 @@ import (
 )
 
 type ObjFileRequirement struct {
-	folderInfos     VolundBuildFolder
-	allLibs         *[]*StaticLibType
-	excludeSrc      []string
-	sourceFilesPath []string
-	sourceFiles     []string
-	headersFolders  []string
-	externIncludes  []string
-	externLibs      []string
-	staticLibs      []string
-	compilerFlags   []string
-	sourceExtension string
-	outFolder       string
+	folderInfos    VolundBuildFolder
+	allLibs        *[]*StaticLibType
+	excludeSrc     []string
+	srcFilesPaths  []string
+	srcFiles       []string
+	headersFolders []string
+	internLibs     []string
+	externIncludes []string
+	externLibs     []string
+	staticLibsDeps []string
+	sharedLibsDeps []string
+	compilerFlags  []string
+	srcExtension   string
+	outFolder      string
 }
 
 func sharedLibTypeToObjType(sharedLib SharedLibType, folderInfos VolundBuildFolder,
@@ -31,13 +33,14 @@ func sharedLibTypeToObjType(sharedLib SharedLibType, folderInfos VolundBuildFold
 	objType.folderInfos = folderInfos
 	objType.allLibs = allLibs
 	objType.excludeSrc = sharedLib.excludeSrc
-	objType.sourceFilesPath = sharedLib.sources
-	objType.sourceFiles = sharedLib.sourceFileNames
-	objType.headersFolders = sharedLib.headerFolders
+	objType.srcFilesPaths = sharedLib.src
+	objType.srcFiles = sharedLib.srcFileNames
+	objType.headersFolders = sharedLib.headersFolders
+	objType.internLibs = sharedLib.internLibs
 	objType.externIncludes = sharedLib.externIncludes
 	objType.externLibs = sharedLib.externLibs
-	objType.staticLibs = sharedLib.staticLibs
-	objType.sourceExtension = sharedLib.sourceExtension
+	objType.staticLibsDeps = sharedLib.staticLibsDeps
+	objType.srcExtension = sharedLib.srcExtension
 	objType.outFolder = sharedLib.outFolder
 	objType.compilerFlags = sharedLib.compilerFlags
 
@@ -50,41 +53,43 @@ func staticLibTypeToObjType(staticLib StaticLibType, folderInfos VolundBuildFold
 	objType.folderInfos = folderInfos
 	objType.allLibs = allLibs
 	objType.excludeSrc = staticLib.excludeSrc
-	objType.sourceFilesPath = staticLib.sources
-	objType.sourceFiles = staticLib.sourceFileNames
-	objType.headersFolders = staticLib.headerFolders
+	objType.srcFilesPaths = staticLib.src
+	objType.srcFiles = staticLib.srcFileNames
+	objType.headersFolders = staticLib.headersFolders
+	objType.internLibs = staticLib.internLibs
 	objType.externIncludes = staticLib.externIncludes
 	objType.externLibs = staticLib.externLibs
-	objType.staticLibs = staticLib.staticLibs
-	objType.sourceExtension = staticLib.sourceExtension
+	objType.staticLibsDeps = staticLib.staticLibsDeps
+	objType.srcExtension = staticLib.srcExtension
 	objType.outFolder = staticLib.outFolder
 	objType.compilerFlags = staticLib.compilerFlags
 
 	return
 }
 
-func binaryTypeToObjType(binary BinaryType, folderInfos VolundBuildFolder,
+func executableTypeToObjType(executable ExecutableType, folderInfos VolundBuildFolder,
 	allLibs *[]*StaticLibType) (objType ObjFileRequirement) {
 
 	objType.folderInfos = folderInfos
 	objType.allLibs = allLibs
-	objType.excludeSrc = binary.excludeSrc
-	objType.sourceFilesPath = binary.sources
-	objType.sourceFiles = binary.sourceFileNames
-	objType.headersFolders = binary.headerFolders
-	objType.externIncludes = binary.externIncludes
-	objType.externLibs = binary.externLibs
-	objType.staticLibs = binary.staticLibs
-	objType.sourceExtension = binary.sourceExtension
-	objType.outFolder = binary.outFolder
-	objType.compilerFlags = binary.compilerFlags
+	objType.excludeSrc = executable.excludeSrc
+	objType.srcFilesPaths = executable.src
+	objType.srcFiles = executable.srcFileNames
+	objType.headersFolders = executable.headersFolders
+	objType.internLibs = executable.internLibs
+	objType.externIncludes = executable.externIncludes
+	objType.externLibs = executable.externLibs
+	objType.staticLibsDeps = executable.staticLibsDeps
+	objType.srcExtension = executable.srcExtension
+	objType.outFolder = executable.outFolder
+	objType.compilerFlags = executable.compilerFlags
 
 	return
 }
 
 func getObjFileArgs(objType ObjFileRequirement, fileID int, srcFilePath string) (args []string) {
 
-	oFilePath := objType.outFolder + "/" + strings.Replace(objType.sourceFiles[fileID], objType.sourceExtension, ".o", -1)
+	oFilePath := objType.outFolder + "/" + strings.Replace(objType.srcFiles[fileID], objType.srcExtension, ".o", -1)
 	//	*objectFilesPath = append(*objectFilesPath, oFilePath)
 
 	//		fmt.Printf("SrcFilePath: %s\n", srcFilePath)
@@ -99,13 +104,13 @@ func getObjFileArgs(objType ObjFileRequirement, fileID int, srcFilePath string) 
 		}
 	}
 
-	_, linkNames, linkIncludes := getStaticLibsLinks(objType.staticLibs, *objType.allLibs, objType.folderInfos.name)
+	_, linkNames, linkIncludes := getStaticLibsLinks(objType.staticLibsDeps, *objType.allLibs, objType.folderInfos.name)
 
 	args = append(args, linkIncludes...)
 	args = append(args, linkNames...)
 
 	args = append(args, getExternIncludesArgs(objType.externIncludes)...)
-	args = append(args, getExternLibsArgs(objType.externLibs)...)
+	args = append(args, getLibsArgs(objType.externLibs)...)
 	args = append(args, objType.compilerFlags...)
 	return
 }
@@ -115,7 +120,7 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	success *bool, objectFilesPath *[]string,
 	mutex *sync.Mutex, bar *pb.ProgressBar) {
 	args := getObjFileArgs(objType, i, srcFilePath)
-	oFilePath := objType.outFolder + "/" + strings.Replace(objType.sourceFiles[i], objType.sourceExtension, ".o", -1)
+	oFilePath := objType.outFolder + "/" + strings.Replace(objType.srcFiles[i], objType.srcExtension, ".o", -1)
 	*objectFilesPath = append(*objectFilesPath, oFilePath)
 
 	cmd := exec.Command(toolchain, args...)
@@ -145,18 +150,18 @@ func buildAndGetObjectFiles(objType ObjFileRequirement, success *bool,
 	objCompleteChan := make(chan int)
 	var mutex = &sync.Mutex{}
 
-	for fileID, srcFilePath := range objType.sourceFilesPath {
+	for fileID, srcFilePath := range objType.srcFilesPaths {
 		if contains(objType.excludeSrc, srcFilePath) == false {
 			fmt.Printf("\t%s \n\t%v\n\n", srcFilePath, getObjFileArgs(objType, fileID, srcFilePath))
 		}
 	}
 
-	sourceFilesPathLen := len(objType.sourceFilesPath)
+	sourceFilesPathLen := len(objType.srcFilesPaths)
 	fmt.Printf("\n")
 
 	//boldGreen.Printf("With Args: %v\n", args)
 
-	bar := pb.New(len(objType.sourceFilesPath))
+	bar := pb.New(len(objType.srcFilesPaths))
 	bar.SetRefreshRate(time.Millisecond)
 	bar.Prefix("Compile ObjFiles:  ")
 	bar.ShowBar = true
@@ -167,7 +172,7 @@ func buildAndGetObjectFiles(objType ObjFileRequirement, success *bool,
 	bar.SetMaxWidth(80)
 	bar.SetUnits(pb.U_NO)
 	bar.Start()
-	for i, srcFilePath := range objType.sourceFilesPath {
+	for i, srcFilePath := range objType.srcFilesPaths {
 
 		if contains(objType.excludeSrc, srcFilePath) == false {
 			go buildObjFile(objType, srcFilePath, i, objCompleteChan, success, objectFilesPath, mutex, bar)
