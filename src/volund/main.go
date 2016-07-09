@@ -296,18 +296,18 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 				switch buildFolder.buildType {
 				case EXECUTABLE:
 					executables = append(executables, makeExecutableType(buildFolder, volundRootFileObj.Builder.MainExecutable))
-					if contains(volundRootFileObj.Builder.Executables, volundCurrentFile.Executable.TargetName) {
-						boldYellow.Printf("WARNING: will not be build (not present in Builder file).\n")
+					if contains(volundRootFileObj.Builder.Executables, volundCurrentFile.Executable.TargetName) == false {
+						boldYellow.Printf("WARNING: %s will not be build (not present in Builder file).\n", volundCurrentFile.Executable.TargetName)
 					}
 				case SHARED_LIB:
 					sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
-					if contains(volundRootFileObj.Builder.SharedLibs, volundCurrentFile.SharedLib.TargetName) {
-						boldYellow.Printf("WARNING: will not be build (not present in Builder file).\n")
+					if contains(volundRootFileObj.Builder.SharedLibs, volundCurrentFile.SharedLib.TargetName) == false {
+						boldYellow.Printf("WARNING: %s will not be build (not present in Builder file).\n", volundCurrentFile.SharedLib.TargetName)
 					}
 				case STATIC_LIB:
 					staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
-					if contains(volundRootFileObj.Builder.StaticLibs, volundCurrentFile.StaticLib.TargetName) {
-						boldYellow.Printf("WARNING: will not be build (not present in Builder file).\n")
+					if contains(volundRootFileObj.Builder.StaticLibs, volundCurrentFile.StaticLib.TargetName) == false {
+						boldYellow.Printf("WARNING: %s will not be build (not present in Builder file).\n", volundCurrentFile.StaticLib.TargetName)
 					}
 				case NONE:
 					boldRed.Printf("ERROR: can't find build type for this file.\n")
