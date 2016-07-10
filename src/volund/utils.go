@@ -210,8 +210,6 @@ func isValidToolchain(testToolchain string) bool {
 func resolveBuildType(builderJSON *BuilderJSON, jsonOBJ *ObjectJSON, buildFolder *VolundBuildFolder, executables *[]string,
 	staticLibs *[]string, sharedLibs *[]string) bool {
 
-	fmt.Printf("Resolve Build Type, TargetName: %s | mainExecutable: %s\n", jsonOBJ.Executable.TargetName, builderJSON.MainExecutable)
-
 	if jsonOBJ.Executable.TargetName != "" && contains(*executables, jsonOBJ.Executable.TargetName) == false && builderJSON.MainExecutable == jsonOBJ.Executable.TargetName {
 		buildFolder.buildType = EXECUTABLE
 	} else if jsonOBJ.Executable.TargetName != "" && contains(*executables, jsonOBJ.Executable.TargetName) {
