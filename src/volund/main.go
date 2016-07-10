@@ -200,9 +200,9 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 
 	if mainExecutableFound == false {
 		if mainBinaryError {
-			boldRed.Printf("ERROR: Out Binary Build FAILED\n")
+			boldRed.Printf("ERROR: Main Binary Build FAILED\n")
 		} else {
-			boldYellow.Printf("Out Binary not found\n")
+			boldYellow.Printf("Main Binary not found\n")
 		}
 		return false
 	}
@@ -291,12 +291,12 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 			buildFolder.volundBuildFile, _ = ioutil.ReadFile("./" + buildFolder.name + "/" + VOLUND_BUILD_FILENAME)
 			volundCurrentFile := getFileJSONObj(buildFolder)
 
-			if resolveBuildType(&volundCurrentFile, &buildFolder, &volundRootFileObj.Builder.Executables,
+			if resolveBuildType(&volundRootFileObj.Builder, &volundCurrentFile, &buildFolder, &volundRootFileObj.Builder.Executables,
 				&volundRootFileObj.Builder.StaticLibs, &volundRootFileObj.Builder.SharedLibs) {
 				switch buildFolder.buildType {
 				case EXECUTABLE:
 					executables = append(executables, makeExecutableType(buildFolder, volundRootFileObj.Builder.MainExecutable))
-					if contains(volundRootFileObj.Builder.Executables, volundCurrentFile.Executable.TargetName) == false {
+					if contains(volundRootFileObj.Builder.Executables, volundCurrentFile.Executable.TargetName) == false && volundRootFileObj.Builder.MainExecutable != volundCurrentFile.Executable.TargetName {
 						boldYellow.Printf("WARNING: %s will not be build (not present in Builder file).\n", volundCurrentFile.Executable.TargetName)
 					}
 				case SHARED_LIB:
@@ -312,6 +312,8 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 				case NONE:
 					boldRed.Printf("ERROR: can't find build type for this file.\n")
 				}
+			} else {
+				boldRed.Printf("ERROR: can't find build type for this file.\n")
 			}
 			/*
 				if volundCurrentFile.Binary.IsEmpty() == false {

@@ -207,10 +207,14 @@ func isValidToolchain(testToolchain string) bool {
 	return false
 }
 
-func resolveBuildType(jsonOBJ *ObjectJSON, buildFolder *VolundBuildFolder, executables *[]string,
+func resolveBuildType(builderJSON *BuilderJSON, jsonOBJ *ObjectJSON, buildFolder *VolundBuildFolder, executables *[]string,
 	staticLibs *[]string, sharedLibs *[]string) bool {
 
-	if jsonOBJ.Executable.TargetName != "" && contains(*executables, jsonOBJ.Executable.TargetName) {
+	fmt.Printf("Resolve Build Type, TargetName: %s | mainExecutable: %s\n", jsonOBJ.Executable.TargetName, builderJSON.MainExecutable)
+
+	if jsonOBJ.Executable.TargetName != "" && contains(*executables, jsonOBJ.Executable.TargetName) == false && builderJSON.MainExecutable == jsonOBJ.Executable.TargetName {
+		buildFolder.buildType = EXECUTABLE
+	} else if jsonOBJ.Executable.TargetName != "" && contains(*executables, jsonOBJ.Executable.TargetName) {
 		buildFolder.buildType = EXECUTABLE
 	} else if jsonOBJ.SharedLib.TargetName != "" && contains(*sharedLibs, jsonOBJ.SharedLib.TargetName) {
 		buildFolder.buildType = SHARED_LIB
