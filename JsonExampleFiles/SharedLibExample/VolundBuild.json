@@ -1,7 +1,7 @@
 {
   "SharedLib":
    {
-     "name": "SharedLibExample",
+     "targetName": "SharedLibExample",
      "srcFolders": ["."],
      "staticLibs": ["StaticLib"],
      "srcExtension": ".cpp",

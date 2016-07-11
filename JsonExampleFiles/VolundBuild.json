@@ -1,14 +1,14 @@
 {
    "Builder":
    {
-     "OS": "Windows",
-     "toolchain": "clang++",
-     "binaries": ["SimpleBinaryExample"],
+     "OS": "Auto",
+     "compiler": "clang++",
+     "executables": ["SimpleBinaryExample"],
      "staticLibs": ["StaticLibExample"],
      "sharedLibs": ["SharedLibExample"],
-     "outBinary": "OutBinaryExample",
-     "outPluginsFolder": "Plugins",
-     "outFolder": "Bin",
+     "mainExecutable": "OutBinaryExample",
+     "mainSharedLibsFolder": "Plugins",
+     "mainFolder": "Bin",
      "Windows":
      {
        "compilerFlags": ["-fms-compatibility-version=19.00"]
