@@ -253,6 +253,8 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 		}
 	}
 
+	boldGreen.Printf("\nSUCCESS: Main Executable [%s] built successfully in: %s\n", mainExecutable.targetName, mainExecutable.outFolder)
+
 	return true
 }
 
