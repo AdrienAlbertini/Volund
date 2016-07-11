@@ -21,15 +21,15 @@ Example:
 
 Root/   
   |--SharedLib1/   
-  |  | VolundBuild.json   
+  |--| VolundBuild.json   
   |   
   |--StaticLib1/   
-  |  | VolundBuild.json   
+  |--| VolundBuild.json   
   |   
   |--Executable1/   
-  |  | VolundBuild.json   
+  |--| VolundBuild.json   
   |   
-  | VolundBuild.json   
+  |VolundBuild.json   
 
 The root file (VolundBuild.json) represents the "Builder" type which handles the compilation of all subsystems 
 (Executables, Static Libraries, Shared Libraries).   
