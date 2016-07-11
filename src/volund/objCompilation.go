@@ -137,6 +137,7 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 		return
 	}
 	mutex.Lock()
+	*success = true
 	//boldCyan.Printf("[%d/%d] ObjFile: ", (i + 1), len(objType.sourceFiles))
 	//boldBlue.Printf("%s ", toolchain)
 	//fmt.Printf("%v\n", args)
@@ -147,52 +148,65 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 
 func buildAndGetObjectFiles(objType ObjFileRequirement, success *bool,
 	objectFilesPath *[]string) {
-	objCompleteChan := make(chan int)
-	var mutex = &sync.Mutex{}
 
-	for fileID, srcFilePath := range objType.srcFilesPaths {
-		if contains(objType.excludeSrc, srcFilePath) == false {
-			fmt.Printf("\t%s \n\t%v\n\n", srcFilePath, getObjFileArgs(objType, fileID, srcFilePath))
-		}
-	}
+	if len(objType.srcFilesPaths) > 0 {
+		objCompleteChan := make(chan int)
+		var mutex = &sync.Mutex{}
 
-	sourceFilesPathLen := len(objType.srcFilesPaths)
-	fmt.Printf("\n")
-
-	//boldGreen.Printf("With Args: %v\n", args)
-
-	bar := pb.New(len(objType.srcFilesPaths))
-	bar.SetRefreshRate(time.Millisecond)
-	bar.Prefix("Compile ObjFiles:  ")
-	bar.ShowBar = true
-	bar.ShowPercent = true
-	bar.ShowCounters = true
-	bar.ShowSpeed = true
-	bar.SetWidth(80)
-	bar.SetMaxWidth(80)
-	bar.SetUnits(pb.U_NO)
-	bar.Start()
-	for i, srcFilePath := range objType.srcFilesPaths {
-
-		if contains(objType.excludeSrc, srcFilePath) == false {
-			go buildObjFile(objType, srcFilePath, i, objCompleteChan, success, objectFilesPath, mutex, bar)
-		} else {
-			sourceFilesPathLen--
-		}
-		/*
-			fmt.Printf("Obj files: %s %v\n", toolchain, args)
-			_, err := exec.Command(toolchain, args...).Output()
-			if err != nil {
-				fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, err)
+		for fileID, srcFilePath := range objType.srcFilesPaths {
+			if contains(objType.excludeSrc, srcFilePath) == false {
+				fmt.Printf("\t%s \n\t%v\n\n", srcFilePath, getObjFileArgs(objType, fileID, srcFilePath))
 			}
-		*/
+		}
+
+		sourceFilesPathLen := len(objType.srcFilesPaths)
+		fmt.Printf("\n")
+
+		//boldGreen.Printf("With Args: %v\n", args)
+
+		bar := pb.New(len(objType.srcFilesPaths))
+		bar.SetRefreshRate(time.Millisecond)
+		bar.Prefix("Compile ObjFiles:  ")
+		bar.ShowBar = true
+		bar.ShowPercent = true
+		bar.ShowCounters = true
+		bar.ShowSpeed = true
+		bar.SetWidth(80)
+		bar.SetMaxWidth(80)
+		bar.SetUnits(pb.U_NO)
+		bar.Start()
+
+		for i, srcFilePath := range objType.srcFilesPaths {
+
+			if contains(objType.excludeSrc, srcFilePath) == false {
+				go buildObjFile(objType, srcFilePath, i, objCompleteChan, success, objectFilesPath, mutex, bar)
+			} else {
+				sourceFilesPathLen--
+			}
+			/*
+					fmt.Printf("Obj files: %s %v\n", toolchain, args)
+					_, err := exec.Command(toolchain, args...).Output()
+					if err != nil {
+					fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, err)
+				}
+			*/
+		}
+
+		for i := 0; i < sourceFilesPathLen; i++ {
+			<-objCompleteChan
+			if *success == false {
+				return
+			}
+		}
+
+		bar.Finish()
+
+	} else {
+		boldRed.Printf("No source files found.\n")
+		*success = false
+		return
 	}
 
-	for i := 0; i < sourceFilesPathLen; i++ {
-		<-objCompleteChan
-	}
-
-	bar.Finish()
 	fmt.Printf("\n")
 	*success = true
 }

@@ -200,9 +200,9 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 
 	if mainExecutableFound == false {
 		if mainBinaryError {
-			boldRed.Printf("ERROR: Main Binary Build FAILED\n")
+			boldRed.Printf("ERROR: Main Executable Build FAILED\n")
 		} else {
-			boldYellow.Printf("Main Binary not found\n")
+			boldYellow.Printf("Main Executable not found\n")
 		}
 		return false
 	}
@@ -238,14 +238,15 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 	return true
 }
 
-func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
+func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuildFolder) {
 	var executables []*ExecutableType
 	var staticLibs []*StaticLibType
 	var sharedLibs []*SharedLibType
 	var volundRootFileObj ObjectJSON
 	mainExecutableError := false
 
-	json.Unmarshal(rootVolundFile, &volundRootFileObj)
+	rootVolundBuildFolder.path = "."
+	json.Unmarshal(rootVolundBuildFolder.volundBuildFile, &volundRootFileObj)
 
 	if volundRootFileObj.IsEmpty() || volundRootFileObj.Builder.IsEmpty() {
 		boldRed.Printf("ERROR : Can't parse builder json\n")
@@ -269,6 +270,17 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 		volundRootFileObj.Builder.Executables = append(volundRootFileObj.Builder.Executables, volundRootFileObj.Builder.MainExecutable)
 	}
 
+	if volundRootFileObj.Executable.IsEmpty() == false {
+		volundRootFileObj.Builder.Executables = append(volundRootFileObj.Builder.Executables, volundRootFileObj.Executable.TargetName)
+		executables = append(executables, makeExecutableType(rootVolundBuildFolder, volundRootFileObj.Builder.MainExecutable))
+	} else if volundRootFileObj.StaticLib.IsEmpty() == false {
+		volundRootFileObj.Builder.StaticLibs = append(volundRootFileObj.Builder.StaticLibs, volundRootFileObj.StaticLib.TargetName)
+		staticLibs = append(staticLibs, makeStaticLibType(rootVolundBuildFolder))
+	} else if volundRootFileObj.SharedLib.IsEmpty() == false {
+		volundRootFileObj.Builder.SharedLibs = append(volundRootFileObj.Builder.SharedLibs, volundRootFileObj.SharedLib.TargetName)
+		sharedLibs = append(sharedLibs, makeSharedLibType(rootVolundBuildFolder))
+	}
+
 	if volundRootFileObj.Builder.FullStatic {
 		volundRootFileObj.Builder.StaticLibs = append(volundRootFileObj.Builder.StaticLibs, volundRootFileObj.Builder.SharedLibs...)
 		volundRootFileObj.Builder.SharedLibs = []string{}
@@ -284,9 +296,11 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 	//	fmt.Printf("SubFilesNB: %d\n", len(subFiles))
 
 	if osType != UNKNOWN {
+
 		for _, buildFolder := range subFiles {
 
 			boldGreen.Print("ReadFile: ")
+
 			fmt.Printf("%s\n", "./"+buildFolder.name+"/"+VOLUND_BUILD_FILENAME)
 			buildFolder.volundBuildFile, _ = ioutil.ReadFile("./" + buildFolder.name + "/" + VOLUND_BUILD_FILENAME)
 			volundCurrentFile := getFileJSONObj(buildFolder)
@@ -374,6 +388,7 @@ func handleFiles(rootVolundFile []byte, subFiles []VolundBuildFolder) {
 func main() {
 	//	var argsWithProg []string = os.Args
 	var subFiles []VolundBuildFolder
+	var rootVolundFolder VolundBuildFolder
 	var rootVolundFile []byte
 	var subVolundFile []byte
 
@@ -412,10 +427,11 @@ func main() {
 			}
 		} else if filename == VOLUND_BUILD_FILENAME {
 			rootVolundFile, _ = ioutil.ReadFile(filename)
+			rootVolundFolder.volundBuildFile = rootVolundFile
 			//	fmt.Printf("Volund RootBuild File Found\n\n")
 
 		}
 	}
 
-	handleFiles(rootVolundFile, subFiles)
+	handleFiles(rootVolundFolder, subFiles)
 }
