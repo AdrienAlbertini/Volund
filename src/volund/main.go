@@ -10,13 +10,14 @@ import (
 	"os/exec"
 )
 
-func buildDependencies(staticLibs []string, allLibs []*StaticLibType) bool {
+func buildDependencies(staticLibs []string, externLibs []string,
+	externIncludes []string, allLibs []*StaticLibType) bool {
 
 	for _, dependencyLib := range staticLibs {
 		dependencyFound, dependency := getStaticLibByName(dependencyLib, allLibs)
 
 		if dependencyFound && dependency.isBuilt == false {
-			if handleStatic(dependency, allLibs) == false {
+			if handleStatic(dependency, externLibs, externIncludes, allLibs) == false {
 				return false
 			}
 		}
@@ -24,62 +25,70 @@ func buildDependencies(staticLibs []string, allLibs []*StaticLibType) bool {
 	return true
 }
 
-func handleExecutable(executable *ExecutableType, allLibs []*StaticLibType) bool {
+func handleExecutable(executable *ExecutableType, externLibs []string,
+	externIncludes []string, allLibs []*StaticLibType) bool {
 
-	_, linkNames, linkIncludes := getStaticLibsLinks(executable.staticLibsDeps, allLibs, executable.targetName)
+	if executable.isBuilt == false {
+		_, linkNames, linkIncludes := getStaticLibsLinks(executable.staticLibsDeps, allLibs, executable.targetName)
+		externalLinks, externLinksIncludes := getExternalDependencies(externLibs, externIncludes)
 
-	boldCyan.Printf("(%d files) Compiling Executable: %s\n", len(executable.src), executable.targetName)
+		boldCyan.Printf("(%d files) Compiling Executable: %s\n", len(executable.src), executable.targetName)
 
-	if buildDependencies(executable.staticLibsDeps, allLibs) == false {
-		return false
+		if buildDependencies(executable.staticLibsDeps, externLibs, externIncludes, allLibs) == false {
+			return false
+		}
+
+		var objSuccess bool
+		var objectFilesPath []string
+		buildAndGetObjectFiles(executableTypeToObjType(*executable, executable.folderInfos, &allLibs), externalLinks,
+			externLinksIncludes, &objSuccess, &objectFilesPath)
+
+		if objSuccess == false {
+			boldRed.Printf("ERROR: Build Executable: %s FAILED\n\n", executable.targetName)
+			return false
+		}
+
+		executableExtension := getExecutableOSExtension()
+
+		args := []string{"-o", executable.outFolder + "/" + executable.targetName + executableExtension}
+
+		args = append(args, compilerFlags...)
+		args = append(args, objectFilesPath...)
+
+		args = append(args, externalLinks...)
+		args = append(args, externLinksIncludes...)
+		args = append(args, linkIncludes...)
+		//	args = append(args, linkPaths...)
+		args = append(args, linkNames...)
+		args = append(args, executable.compilerFlags...)
+
+		args = append(args, getExternIncludesArgs(executable.externIncludes)...)
+		args = append(args, getLibsArgs(executable.externLibs)...)
+
+		fmt.Printf("Handle Executable args: %v\n", args)
+
+		cmd := exec.Command(toolchain, args...)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			boldRed.Printf("ERROR: Executable: %s | Error: %s\n\n", executable.targetName, fmt.Sprint(err))
+			fmt.Printf("%s\n", string(out))
+			return false
+		}
+
+		if osType == OSX || osType == LINUX {
+			args = []string{"+x", executable.outFolder + "/" + executable.targetName + executableExtension}
+			exec.Command("chmod", args...).Run()
+		}
+
+		boldGreen.Printf("\nSUCCESS: [%s] built successfully !\n\n", executable.targetName)
+		executable.isBuilt = true
 	}
-
-	var objSuccess bool
-	var objectFilesPath []string
-	buildAndGetObjectFiles(executableTypeToObjType(*executable, executable.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
-
-	if objSuccess == false {
-		boldRed.Printf("ERROR: Build Executable: %s FAILED\n\n", executable.targetName)
-		return false
-	}
-
-	executableExtension := getExecutableOSExtension()
-
-	args := []string{"-o", executable.outFolder + "/" + executable.targetName + executableExtension}
-
-	args = append(args, compilerFlags...)
-	args = append(args, objectFilesPath...)
-
-	args = append(args, linkIncludes...)
-	//	args = append(args, linkPaths...)
-	args = append(args, linkNames...)
-	args = append(args, executable.compilerFlags...)
-
-	args = append(args, getExternIncludesArgs(executable.externIncludes)...)
-	args = append(args, getLibsArgs(executable.externLibs)...)
-
-	fmt.Printf("Handle Executable args: %v\n", args)
-
-	cmd := exec.Command(toolchain, args...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		boldRed.Printf("ERROR: Executable: %s | Error: %s\n\n", executable.targetName, fmt.Sprint(err))
-		fmt.Printf("%s\n", string(out))
-		return false
-	}
-
-	if osType == OSX || osType == LINUX {
-		args = []string{"+x", executable.outFolder + "/" + executable.targetName + executableExtension}
-		exec.Command("chmod", args...).Run()
-	}
-
-	fmt.Printf("%s\n\n", out)
-	executable.isBuilt = true
 
 	return true
 }
 
-func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
+func handleStatic(staticLib *StaticLibType, externLibs []string,
+	externIncludes []string, allLibs []*StaticLibType) bool {
 
 	if staticLib.isBuilt == false {
 
@@ -87,13 +96,15 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 
 		//	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(staticLib.staticLibs, allLibs, staticLib.name)
 
-		if buildDependencies(staticLib.staticLibsDeps, allLibs) == false {
+		if buildDependencies(staticLib.staticLibsDeps, externLibs, externIncludes, allLibs) == false {
 			return false
 		}
 
 		var objSuccess bool
 		var objectFilesPath []string
-		buildAndGetObjectFiles(staticLibTypeToObjType(*staticLib, staticLib.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
+		externalLinks, externLinksIncludes := getExternalDependencies(externLibs, externIncludes)
+		buildAndGetObjectFiles(staticLibTypeToObjType(*staticLib, staticLib.folderInfos, &allLibs), externalLinks,
+			externLinksIncludes, &objSuccess, &objectFilesPath)
 
 		if objSuccess == false {
 			boldRed.Printf("ERROR: Build StaticLib: %s FAILED\n\n", staticLib.targetName)
@@ -122,64 +133,71 @@ func handleStatic(staticLib *StaticLibType, allLibs []*StaticLibType) bool {
 			fmt.Printf("%s\n", string(out))
 			return false
 		}
-		fmt.Printf("%s\n\n", out)
+		boldGreen.Printf("\nSUCCESS: [%s] built successfully !\n\n", staticLib.targetName)
 
 		staticLib.isBuilt = true
 	}
 	return true
 }
 
-func handleSharedLib(sharedLib *SharedLibType, allLibs []*StaticLibType) bool {
+func handleSharedLib(sharedLib *SharedLibType, externLibs []string,
+	externIncludes []string, allLibs []*StaticLibType) bool {
 
-	boldCyan.Printf("(%d files) Compiling SharedLib: %s\n", len(sharedLib.src), sharedLib.targetName)
+	if sharedLib.isBuilt == false {
+		boldCyan.Printf("(%d files) Compiling SharedLib: %s\n", len(sharedLib.src), sharedLib.targetName)
 
-	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(sharedLib.staticLibsDeps, allLibs, "")
+		linkPaths, linkNames, linkIncludes := getStaticLibsLinks(sharedLib.staticLibsDeps, allLibs, "")
+		externalLinks, externLinksIncludes := getExternalDependencies(externLibs, externIncludes)
 
-	if buildDependencies(sharedLib.staticLibsDeps, allLibs) == false {
-		return false
+		if buildDependencies(sharedLib.staticLibsDeps, externLibs, externIncludes, allLibs) == false {
+			return false
+		}
+
+		var objSuccess bool
+		var objectFilesPath []string
+		buildAndGetObjectFiles(sharedLibTypeToObjType(*sharedLib, sharedLib.folderInfos, &allLibs), externalLinks,
+			externLinksIncludes, &objSuccess, &objectFilesPath)
+
+		if objSuccess == false {
+			boldRed.Printf("ERROR: Build SharedLib: %s FAILED\n\n", sharedLib.targetName)
+			return false
+		}
+
+		sharedLibExtension := getSharedLibOsExtension()
+
+		osSharedFlag := "-shared"
+
+		switch osType {
+		case LINUX:
+			osSharedFlag = "-fPIC"
+		}
+
+		args := []string{osSharedFlag, "-o", sharedLib.outFolder + "/" + sharedLib.targetName + sharedLibExtension}
+
+		args = append(args, compilerFlags...)
+		args = append(args, objectFilesPath...)
+
+		args = append(args, externalLinks...)
+		args = append(args, externLinksIncludes...)
+		args = append(args, linkIncludes...)
+		args = append(args, linkPaths...)
+		args = append(args, linkNames...)
+		args = append(args, sharedLib.compilerFlags...)
+
+		args = append(args, getLibsArgs(sharedLib.externLibs)...)
+
+		fmt.Printf("Handle sharedLib args: %v\n", args)
+
+		cmd := exec.Command(toolchain, args...)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			boldRed.Printf("ERROR: SharedLib: %s | Error: %s\n\n", sharedLib.targetName, fmt.Sprint(err.Error()))
+			fmt.Printf("Out: %s\n\n", out)
+			return false
+		}
+		boldGreen.Printf("\nSUCCESS: [%s] built successfully !\n\n", sharedLib.targetName)
+		sharedLib.isBuilt = true
 	}
-
-	var objSuccess bool
-	var objectFilesPath []string
-	buildAndGetObjectFiles(sharedLibTypeToObjType(*sharedLib, sharedLib.folderInfos, &allLibs), &objSuccess, &objectFilesPath)
-
-	if objSuccess == false {
-		boldRed.Printf("ERROR: Build SharedLib: %s FAILED\n\n", sharedLib.targetName)
-		return false
-	}
-
-	sharedLibExtension := getSharedLibOsExtension()
-
-	osSharedFlag := "-shared"
-
-	switch osType {
-	case LINUX:
-		osSharedFlag = "-fPIC"
-	}
-
-	args := []string{osSharedFlag, "-o", sharedLib.outFolder + "/" + sharedLib.targetName + sharedLibExtension}
-
-	args = append(args, compilerFlags...)
-	args = append(args, objectFilesPath...)
-
-	args = append(args, linkIncludes...)
-	args = append(args, linkPaths...)
-	args = append(args, linkNames...)
-	args = append(args, sharedLib.compilerFlags...)
-
-	args = append(args, getLibsArgs(sharedLib.externLibs)...)
-
-	fmt.Printf("Handle sharedLib args: %v\n", args)
-
-	cmd := exec.Command(toolchain, args...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		boldRed.Printf("ERROR: SharedLib: %s | Error: %s\n\n", sharedLib.targetName, fmt.Sprint(err.Error()))
-		fmt.Printf("Out: %s\n\n", out)
-		return false
-	}
-	fmt.Printf("Out: %s\n\n", out)
-	sharedLib.isBuilt = true
 
 	return true
 }
@@ -357,14 +375,14 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 		fmt.Printf("\n")
 		for i := 0; i < len(staticLibs); i++ {
 			staticType := staticLibs[i]
-			if (contains(volundRootFileObj.Builder.StaticLibs, staticType.targetName) == false && contains(mainExecutable.staticLibsDeps, staticType.targetName) == false) || handleStatic(staticType, staticLibs) == false {
+			if (contains(volundRootFileObj.Builder.StaticLibs, staticType.targetName) == false && contains(mainExecutable.staticLibsDeps, staticType.targetName) == false) || handleStatic(staticType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs) == false {
 				staticLibs = append(staticLibs[:i], staticLibs[i+1:]...)
 				i = -1
 			}
 		}
 		for i := 0; i < len(sharedLibs); i++ {
 			sharedLibType := sharedLibs[i]
-			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.targetName) == false && contains(mainExecutable.sharedLibsDeps, sharedLibType.targetName) == false) || handleSharedLib(sharedLibType, staticLibs) == false {
+			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.targetName) == false && contains(mainExecutable.sharedLibsDeps, sharedLibType.targetName) == false) || handleSharedLib(sharedLibType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs) == false {
 				sharedLibs = append(sharedLibs[:i], sharedLibs[i+1:]...)
 				i = -1
 			}
@@ -372,7 +390,7 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 
 		for i := 0; i < len(executables); i++ {
 			executableType := executables[i]
-			if contains(volundRootFileObj.Builder.Executables, executableType.targetName) == false || handleExecutable(executableType, staticLibs) == false {
+			if contains(volundRootFileObj.Builder.Executables, executableType.targetName) == false || handleExecutable(executableType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs) == false {
 				executables = append(executables[:i], executables[i+1:]...)
 				if volundRootFileObj.Builder.MainExecutable == executableType.targetName {
 					mainExecutableError = true

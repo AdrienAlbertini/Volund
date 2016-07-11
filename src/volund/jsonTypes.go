@@ -20,6 +20,8 @@ type BuilderJSON struct {
 	Executables          []string              `json:"executables"`
 	StaticLibs           []string              `json:"staticLibs"`
 	SharedLibs           []string              `json:"sharedLibs"`
+	ExternIncludes       []string              `json:"externIncludes"` // -I (absolute)
+	ExternLibs           []string              `json:"externLibs"`     // -L & -l (absolute)
 	CompilerFlags        []string              `json:"compilerFlags"`
 	FullStatic           bool                  `json:"fullStatic"`
 	Windows              BuilderOSSpecificJSON `json:"Windows"`
@@ -36,6 +38,8 @@ type BuilderOSSpecificJSON struct {
 	Executables          []string `json:"executables"`
 	StaticLibs           []string `json:"staticLibs"`
 	SharedLibs           []string `json:"sharedLibs"`
+	ExternIncludes       []string `json:"externIncludes"` // -I (absolute)
+	ExternLibs           []string `json:"externLibs"`     // -L & -l (absolute)
 	CompilerFlags        []string `json:"compilerFlags"`
 	FullStatic           bool     `json:"fullStatic"`
 }

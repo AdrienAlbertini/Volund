@@ -195,6 +195,18 @@ func getStaticLibsLinks(libsToLink []string, libs []*StaticLibType, avoidLib str
 	return
 }
 
+func getExternalDependencies(externLibs []string, externIncludes []string) (linkLibs []string, linkIncludes []string) {
+
+	for _, externalLib := range externLibs {
+		linkLibs = append(linkLibs, "-l"+externalLib)
+	}
+	for _, externalInclude := range externIncludes {
+		linkIncludes = append(linkIncludes, "-I"+externalInclude)
+	}
+
+	return
+}
+
 func isValidToolchain(testToolchain string) bool {
 	validToolchains := []string{"clang", "", "gcc", "g++"}
 

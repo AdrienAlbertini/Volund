@@ -65,6 +65,8 @@ type BuilderType struct {
 	executables          []ExecutableType
 	staticLibs           []StaticLibType
 	sharedLibs           []SharedLibType
+	externIncludes       []string
+	externLibs           []string
 	mainSharedLibsFolder string
 	mainFolder           string
 }

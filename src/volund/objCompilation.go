@@ -118,8 +118,12 @@ func getObjFileArgs(objType ObjFileRequirement, fileID int, srcFilePath string) 
 func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	i int, objCompleteChan chan int,
 	success *bool, objectFilesPath *[]string,
+	externLibs []string, externIncludes []string,
 	mutex *sync.Mutex, bar *pb.ProgressBar) {
 	args := getObjFileArgs(objType, i, srcFilePath)
+	args = append(args, externIncludes...)
+	args = append(args, externLibs...)
+
 	oFilePath := objType.outFolder + "/" + strings.Replace(objType.srcFiles[i], objType.srcExtension, ".o", -1)
 	*objectFilesPath = append(*objectFilesPath, oFilePath)
 
@@ -146,8 +150,8 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	objCompleteChan <- 1
 }
 
-func buildAndGetObjectFiles(objType ObjFileRequirement, success *bool,
-	objectFilesPath *[]string) {
+func buildAndGetObjectFiles(objType ObjFileRequirement, externLibs []string, externIncludes []string,
+	success *bool, objectFilesPath *[]string) {
 
 	if len(objType.srcFilesPaths) > 0 {
 		objCompleteChan := make(chan int)
@@ -155,7 +159,10 @@ func buildAndGetObjectFiles(objType ObjFileRequirement, success *bool,
 
 		for fileID, srcFilePath := range objType.srcFilesPaths {
 			if contains(objType.excludeSrc, srcFilePath) == false {
-				fmt.Printf("\t%s \n\t%v\n\n", srcFilePath, getObjFileArgs(objType, fileID, srcFilePath))
+				args := getObjFileArgs(objType, fileID, srcFilePath)
+				args = append(args, externIncludes...)
+				args = append(args, externLibs...)
+				fmt.Printf("\t%s \n\t%v\n\n", srcFilePath, args)
 			}
 		}
 
@@ -179,7 +186,7 @@ func buildAndGetObjectFiles(objType ObjFileRequirement, success *bool,
 		for i, srcFilePath := range objType.srcFilesPaths {
 
 			if contains(objType.excludeSrc, srcFilePath) == false {
-				go buildObjFile(objType, srcFilePath, i, objCompleteChan, success, objectFilesPath, mutex, bar)
+				go buildObjFile(objType, srcFilePath, i, objCompleteChan, success, objectFilesPath, externLibs, externIncludes, mutex, bar)
 			} else {
 				sourceFilesPathLen--
 			}
