@@ -347,7 +347,7 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 					boldRed.Printf("ERROR: can't find build type for this file.\n")
 				}
 			} else {
-				boldRed.Printf("ERROR: can't find build type for this file.\n")
+				boldYellow.Printf("WARNING: %s will not be build.\n", volundCurrentFile.StaticLib.TargetName)
 			}
 			/*
 				if volundCurrentFile.Binary.IsEmpty() == false {
