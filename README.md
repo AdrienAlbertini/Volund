@@ -37,35 +37,33 @@ The root file (VolundBuild.json) represents the "Builder" type which handles the
 Json types:   
    
 ```
-Builder
-
-string                `json:"OS"` 
-string                `json:"compiler"`
-string                `json:"mainExecutable"`
-string                `json:"mainFolder"`
-string                `json:"mainSharedLibsFolder"`
-[]string              `json:"executables"`
-[]string              `json:"staticLibs"`
-[]string              `json:"sharedLibs"`
-[]string              `json:"externIncludes"` // -I (absolute)
-[]string              `json:"externLibs"`     // -L & -l (absolute)
-[]string              `json:"compilerFlags"`
-bool                  `json:"fullStatic"`
+string      OS
+string      compiler
+string      mainExecutable
+string      mainFolder
+string      mainSharedLibsFolder
+[]string    executables
+[]string    staticLibs
+[]string    sharedLibs
+[]string    externIncludes // -I (absolute)
+[]string    externLibs     // -L & -l (absolute)
+[]string    compilerFlags
+bool        fullStatic
 
 Executable, SharedLib, StaticLib
 
-string   `json:"targetName"`
-string   `json:"srcExtension"`
-string   `json:"outFolder"`
-[]string `json:"staticLibsDeps"`
-[]string `json:"sharedLibsDeps"`
-[]string `json:"excludeSrc"`
-[]string `json:"srcFolders"`
-[]string `json:"headersFolders"` // -I (relative)
-[]string `json:"internLibs"`     //  -L & -l (relative)
-[]string `json:"externIncludes"` // -I (absolute)
-[]string `json:"externLibs"`     // -L & -l (absolute)
-[]string `json:"compilerFlags"`
+string   		targetName
+string   		srcExtension
+string   		outFolder
+[]string 		staticLibsDeps
+[]string 		sharedLibsDeps
+[]string 		excludeSrc
+[]string 		srcFolders
+[]string 		headersFolders // -I (relative)
+[]string 		internLibs     //  -L & -l (relative)
+[]string 		externIncludes // -I (absolute)
+[]string 		externLibs     // -L & -l (absolute)
+[]string 		compilerFlags
 ```
 
 # License 
