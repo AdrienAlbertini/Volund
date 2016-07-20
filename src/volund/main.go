@@ -208,7 +208,7 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 	var mainExecutable *ExecutableType
 
 	for _, executable := range executables {
-		fmt.Printf("OutBinary: %s | CurrentExecutable: %s\n", builder.MainExecutable, executable.targetName)
+		fmt.Printf("MainExecutable: %s | CurrentExecutable: %s\n", builder.MainExecutable, executable.targetName)
 		if builder.MainExecutable == executable.targetName {
 			mainExecutable = executable
 			mainExecutableFound = true
@@ -241,9 +241,10 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 	boldCyan.Printf("\nCopying out binary files.\n")
 	copy(mainExecutable.outFolder+"/"+mainExecutable.targetName+binaryExtension, builder.MainFolder+"/"+mainExecutable.targetName+binaryExtension)
 
+	//fmt.Printf("Copy shared libs to: %s\n", builder.MainFolder+"/"+builder.MainSharedLibsFolder+"/"+sharedLib.targetName+sharedLibExtension)
 	for _, sharedLib := range sharedLibs {
 		if contains(mainExecutable.sharedLibsDeps, sharedLib.targetName) {
-			copy(sharedLib.outFolder+"/"+sharedLib.targetName+sharedLibExtension, builder.MainFolder+"/sharedLibs/"+sharedLib.targetName+sharedLibExtension)
+			copy(sharedLib.outFolder+"/"+sharedLib.targetName+sharedLibExtension, builder.MainFolder+"/"+builder.MainSharedLibsFolder+"/"+sharedLib.targetName+sharedLibExtension)
 		}
 	}
 
