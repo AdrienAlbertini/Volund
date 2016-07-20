@@ -233,9 +233,9 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 	if !success {
 		os.MkdirAll(builder.MainFolder, os.ModePerm)
 	}
-	success, _ = exists(builder.MainFolder + "sharedLibs")
+	success, _ = exists(builder.MainFolder+"/"+builder.MainSharedLibsFolder)
 	if !success {
-		os.MkdirAll(builder.MainFolder+"/sharedLibs", os.ModePerm)
+		os.MkdirAll(builder.MainFolder+"/"+builder.MainSharedLibsFolder, os.ModePerm)
 	}
 
 	boldCyan.Printf("\nCopying out binary files.\n")
@@ -250,7 +250,7 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 
 	for _, lib := range staticLibs {
 		if contains(mainExecutable.staticLibsDeps, lib.targetName) {
-			copy(lib.outFolder+"/"+lib.targetName+staticExtension, builder.MainFolder+lib.targetName+staticExtension)
+			copy(lib.outFolder+"/"+lib.targetName+staticExtension, builder.MainFolder+"/"+lib.targetName+staticExtension)
 		}
 	}
 
