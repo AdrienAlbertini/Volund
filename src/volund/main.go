@@ -241,7 +241,7 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 	boldCyan.Printf("\nCopying out binary files.\n")
 	copy(mainExecutable.outFolder+"/"+mainExecutable.targetName+binaryExtension, builder.MainFolder+"/"+mainExecutable.targetName+binaryExtension)
 
-	//fmt.Printf("Copy shared libs to: %s\n", builder.MainFolder+"/"+builder.MainSharedLibsFolder+"/"+sharedLib.targetName+sharedLibExtension)
+	fmt.Printf("Copy shared libs (%d) to: %s\n", len(sharedLibs), builder.MainFolder+"/"+builder.MainSharedLibsFolder+"/"+sharedLib.targetName+sharedLibExtension)
 	for _, sharedLib := range sharedLibs {
 		if contains(mainExecutable.sharedLibsDeps, sharedLib.targetName) {
 			copy(sharedLib.outFolder+"/"+sharedLib.targetName+sharedLibExtension, builder.MainFolder+"/"+builder.MainSharedLibsFolder+"/"+sharedLib.targetName+sharedLibExtension)
