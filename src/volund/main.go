@@ -67,7 +67,7 @@ func handleExecutable(executable *ExecutableType, externLibs []string,
 
 		fmt.Printf("Handle Executable args: %v\n", args)
 
-		cmd := exec.Command(toolchain, args...)
+		cmd := exec.Command(compiler, args...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			boldRed.Printf("ERROR: Executable: %s | Error: %s\n\n", executable.targetName, fmt.Sprint(err))
@@ -188,7 +188,7 @@ func handleSharedLib(sharedLib *SharedLibType, externLibs []string,
 
 		fmt.Printf("Handle sharedLib args: %v\n", args)
 
-		cmd := exec.Command(toolchain, args...)
+		cmd := exec.Command(compiler, args...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			boldRed.Printf("ERROR: SharedLib: %s | Error: %s\n\n", sharedLib.targetName, fmt.Sprint(err.Error()))
@@ -226,7 +226,7 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 	}
 
 	binaryExtension := getExecutableOSExtension()
-	staticExtension := getStaticLibOSExtension()
+	//staticExtension := getStaticLibOSExtension()
 	sharedLibExtension := getSharedLibOsExtension()
 
 	success, _ := exists(builder.MainFolder)
@@ -248,11 +248,13 @@ func handleBuilder(mainBinaryError bool, builder BuilderJSON, executables []*Exe
 		}
 	}
 
+/*
 	for _, lib := range staticLibs {
 		if contains(mainExecutable.staticLibsDeps, lib.targetName) {
 			copy(lib.outFolder+"/"+lib.targetName+staticExtension, builder.MainFolder+"/"+lib.targetName+staticExtension)
 		}
 	}
+*/
 
 	boldGreen.Printf("\nSUCCESS: Main Executable [%s] built successfully in: %s\n", mainExecutable.targetName, mainExecutable.outFolder)
 
@@ -307,13 +309,13 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 		volundRootFileObj.Builder.SharedLibs = []string{}
 	}
 
-	if isValidToolchain(volundRootFileObj.Builder.Compiler) {
-		toolchain = volundRootFileObj.Builder.Compiler
+	if isValidCompiler(volundRootFileObj.Builder.Compiler) {
+		compiler = volundRootFileObj.Builder.Compiler
 	} else {
-		toolchain = DEFAULT_TOOLCHAIN
+		compiler = DEFAULT_COMPILER
 	}
 
-	boldRed.Printf("Volund: OS: %s | Toolchain: %s\n\n", osType.ToString(), toolchain)
+	boldRed.Printf("Volund: OS: %s | Compiler: %s\n\n", osType.ToString(), compiler)
 	//	fmt.Printf("SubFilesNB: %d\n", len(subFiles))
 
 	if osType != UNKNOWN {

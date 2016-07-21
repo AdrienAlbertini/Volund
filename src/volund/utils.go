@@ -67,7 +67,9 @@ func executeCommandWithPrintErr(command string, args []string) {
 func getLibsArgs(libs []string) (args []string) {
 	if libs != nil {
 		for _, lib := range libs {
-			args = append(args, "-l"+lib)
+			if lib != "" {
+				args = append(args, "-l"+lib)
+			}
 		}
 	}
 
@@ -198,20 +200,24 @@ func getStaticLibsLinks(libsToLink []string, libs []*StaticLibType, avoidLib str
 func getExternalDependencies(externLibs []string, externIncludes []string) (linkLibs []string, linkIncludes []string) {
 
 	for _, externalLib := range externLibs {
-		linkLibs = append(linkLibs, "-l"+externalLib)
+		if externalLib != "" {
+			linkLibs = append(linkLibs, "-l"+externalLib)
+		}
 	}
 	for _, externalInclude := range externIncludes {
-		linkIncludes = append(linkIncludes, "-I"+externalInclude)
+		if externalInclude != "" {
+			linkIncludes = append(linkIncludes, "-I"+externalInclude)
+		}
 	}
 
 	return
 }
 
-func isValidToolchain(testToolchain string) bool {
-	validToolchains := []string{"clang", "", "gcc", "g++"}
+func isValidCompiler(testCompiler string) bool {
+	validCompilers := []string{"clang", "", "gcc", "g++"}
 
-	for _, toolchain := range validToolchains {
-		if testToolchain == toolchain {
+	for _, compiler := range validCompilers {
+		if testCompiler == compiler {
 			return true
 		}
 	}

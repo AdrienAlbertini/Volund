@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 	//	"sync/atomic"
+  "github.com/djherbis/times"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
@@ -127,7 +128,23 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	oFilePath := objType.outFolder + "/" + strings.Replace(objType.srcFiles[i], objType.srcExtension, ".o", -1)
 	*objectFilesPath = append(*objectFilesPath, oFilePath)
 
-	cmd := exec.Command(toolchain, args...)
+	mutex.Lock()
+	cppStat, cppErr := times.Stat(srcFilePath)
+	if cppErr == nil {
+		objStat, objErr := times.Stat(oFilePath)
+		if objErr == nil {
+			cppDuration := cppStat.ModTime()
+			objDuration := objStat.ModTime()
+
+			fmt.Printf("CppModTime: %s | ObjModTime: %s\n", cppDuration, objDuration)
+			/*if cppDuration < objDuration {
+				return
+			}*/
+		}
+	}
+	mutex.Unlock()
+
+	cmd := exec.Command(compiler, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		mutex.Lock()
@@ -143,7 +160,7 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	mutex.Lock()
 	*success = true
 	//boldCyan.Printf("[%d/%d] ObjFile: ", (i + 1), len(objType.sourceFiles))
-	//boldBlue.Printf("%s ", toolchain)
+	//boldBlue.Printf("%s ", compiler)
 	//fmt.Printf("%v\n", args)
 	bar.Increment()
 	mutex.Unlock()
@@ -191,8 +208,8 @@ func buildAndGetObjectFiles(objType ObjFileRequirement, externLibs []string, ext
 				sourceFilesPathLen--
 			}
 			/*
-					fmt.Printf("Obj files: %s %v\n", toolchain, args)
-					_, err := exec.Command(toolchain, args...).Output()
+					fmt.Printf("Obj files: %s %v\n", compiler, args)
+					_, err := exec.Command(compiler, args...).Output()
 					if err != nil {
 					fmt.Printf("ObjFile: %s | Error: %s\n", srcFilePath, err)
 				}

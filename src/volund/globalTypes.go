@@ -1,11 +1,11 @@
 package main
 
-type VolundToolchainType int64
+type VolundCompilerType int64
 type VolundOSType int64
 type VolundBuildType int64
 
 const VOLUND_BUILD_FILENAME string = "VolundBuild.json"
-const DEFAULT_TOOLCHAIN string = "clang++"
+const DEFAULT_COMPILER string = "clang++"
 
 const (
 	EXECUTABLE VolundBuildType = iota
@@ -38,5 +38,5 @@ const (
 
 var compilerFlags []string
 var osType VolundOSType
-var toolchain string
+var compiler string
 var builder BuilderType
