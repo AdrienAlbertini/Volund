@@ -67,6 +67,7 @@ func handleExecutable(executable *ExecutableType, externLibs []string,
 
 		fmt.Printf("Handle Executable args: %v\n", args)
 
+		bufferedCommand(compiler, args)
 		cmd := exec.Command(compiler, args...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {

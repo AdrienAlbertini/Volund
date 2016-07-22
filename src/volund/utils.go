@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"bufio"
 	"io/ioutil"
 	"log"
 	"os"
@@ -286,6 +287,34 @@ func returnDefaultIfEmpty(toCheck string, defaultStr string) string {
 		return defaultStr
 	}
 	return toCheck
+}
+
+func bufferedCommand(cmdName string, cmdArgs []string) (err error) {
+		cmd := exec.Command(cmdName, cmdArgs...)
+		cmdReader, err := cmd.StdoutPipe()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error creating StdoutPipe for Cmd", err)
+			os.Exit(1)
+		}
+
+		scanner := bufio.NewScanner(cmdReader)
+		go func() {
+			for scanner.Scan() {
+				fmt.Printf("Compiler out: %s\n", scanner.Text())
+			}
+		}()
+
+		err = cmd.Start()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error starting Cmd", err)
+		}
+
+		err = cmd.Wait()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error waiting for Cmd", err)
+		}
+
+	return err
 }
 
 func exists(path string) (bool, error) {

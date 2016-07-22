@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"time"
 	//	"sync/atomic"
-  "github.com/djherbis/times"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
@@ -129,17 +129,24 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	*objectFilesPath = append(*objectFilesPath, oFilePath)
 
 	mutex.Lock()
-	cppStat, cppErr := times.Stat(srcFilePath)
+	cppStat, cppErr := os.Stat(objType.folderInfos.path + "/" + srcFilePath)
 	if cppErr == nil {
-		objStat, objErr := times.Stat(oFilePath)
+		objStat, objErr := os.Stat(oFilePath)
 		if objErr == nil {
 			cppDuration := cppStat.ModTime()
 			objDuration := objStat.ModTime()
+	//		cppParsedTime := cppDuration.Second()
+	//		objParsedTime := objDuration.Second()
 
-			fmt.Printf("CppModTime: %s | ObjModTime: %s\n", cppDuration, objDuration)
-			/*if cppDuration < objDuration {
+		//	fmt.Printf("CppModTime: %s | ObjModTime: %s\n", cppDuration, objDuration)
+		//	fmt.Printf("CppParsedTime: %d | ObjParsedTime: %d | Diff: %f\n", cppParsedTime, objParsedTime, objDuration.Sub(cppDuration).Hours())
+			if objDuration.Sub(cppDuration).Hours() > 0 {
+				*success = true
+				bar.Increment()
+				objCompleteChan <- 1
+				mutex.Unlock()
 				return
-			}*/
+			}
 		}
 	}
 	mutex.Unlock()
@@ -163,8 +170,8 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	//boldBlue.Printf("%s ", compiler)
 	//fmt.Printf("%v\n", args)
 	bar.Increment()
-	mutex.Unlock()
 	objCompleteChan <- 1
+	mutex.Unlock()
 }
 
 func buildAndGetObjectFiles(objType ObjFileRequirement, externLibs []string, externIncludes []string,
