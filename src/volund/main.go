@@ -285,7 +285,7 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 	if osType == UNKNOWN {
 		osType = getRuntimeOS()
 	}
-	//	volundRootFileObj.Builder = resolveBuilderOSParams(volundRootFileObj.Builder)
+	volundRootFileObj.Builder = resolveBuilderOSParams(volundRootFileObj.Builder)
 
 	if osType == UNKNOWN {
 		boldRed.Printf("ERROR: OS not supported\n")
