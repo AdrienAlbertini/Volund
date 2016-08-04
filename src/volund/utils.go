@@ -178,7 +178,12 @@ func getStaticLibsLinks(libsToLink []string, libs []*StaticLibType, avoidLib str
 		//		fmt.Printf("GetStaticLibsLinks Libs: %s\n", staticLib.name)
 		if (staticLib.targetName != avoidLib) && (contains(libsToLink, staticLib.targetName)) {
 			path := "-L" + staticLib.outFolder
-			name := staticLib.outFolder + "/" + staticLib.targetName + getStaticLibOSExtension()
+
+			name := "-l" + staticLib.outFolder + "/" + staticLib.targetName + getStaticLibOSExtension()
+			switch osType {
+			case WINDOWS:
+			name = "-l" + staticLib.targetName
+			}
 
 			linkIncludes = append(linkIncludes, "-I"+"./"+staticLib.targetName+"/.")
 			for _, includeHeader := range staticLib.headersFolders {
@@ -215,7 +220,7 @@ func getExternalDependencies(externLibs []string, externIncludes []string) (link
 }
 
 func isValidCompiler(testCompiler string) bool {
-	validCompilers := []string{"clang", "", "gcc", "g++"}
+	validCompilers := []string{"clang", "clang++", "gcc", "g++", "clang-cl", "clang++-cl"}
 
 	for _, compiler := range validCompilers {
 		if testCompiler == compiler {

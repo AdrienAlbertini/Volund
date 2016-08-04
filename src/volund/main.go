@@ -35,6 +35,7 @@ func handleExecutable(executable *ExecutableType, externLibs []string,
 		boldCyan.Printf("(%d files) Compiling Executable: %s\n", len(executable.src), executable.targetName)
 
 		if buildDependencies(executable.staticLibsDeps, externLibs, externIncludes, allLibs) == false {
+			boldRed.Printf("ERROR: Build Executable: %s dependencies FAILED\n\n", executable.targetName)
 			return false
 		}
 
@@ -98,6 +99,7 @@ func handleStatic(staticLib *StaticLibType, externLibs []string,
 		//	linkPaths, linkNames, linkIncludes := getStaticLibsLinks(staticLib.staticLibs, allLibs, staticLib.name)
 
 		if buildDependencies(staticLib.staticLibsDeps, externLibs, externIncludes, allLibs) == false {
+			boldRed.Printf("ERROR: Build StaticLib: %s dependencies FAILED\n\n", staticLib.targetName)
 			return false
 		}
 
@@ -151,6 +153,7 @@ func handleSharedLib(sharedLib *SharedLibType, externLibs []string,
 		externalLinks, externLinksIncludes := getExternalDependencies(externLibs, externIncludes)
 
 		if buildDependencies(sharedLib.staticLibsDeps, externLibs, externIncludes, allLibs) == false {
+			boldRed.Printf("ERROR: Build SharedLib: %s dependencies FAILED\n\n", sharedLib.targetName)
 			return false
 		}
 
@@ -353,21 +356,6 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 			} else {
 				boldYellow.Printf("WARNING: %s will not be build.\n", volundCurrentFile.StaticLib.TargetName)
 			}
-			/*
-				if volundCurrentFile.Binary.IsEmpty() == false {
-					buildFolder.buildType = BINARY
-					binaries = append(binaries, makeBinaryType(buildFolder, volundRootFileObj.Builder.OutBinary))
-				} else if volundCurrentFile.SharedLib.IsEmpty() == false {
-					buildFolder.buildType = SHARED_LIB
-					sharedLibs = append(sharedLibs, makeSharedLibType(buildFolder))
-				} else if volundCurrentFile.StaticLib.IsEmpty() == false {
-					buildFolder.buildType = STATIC_LIB
-					staticLibs = append(staticLibs, makeStaticLibType(buildFolder))
-				} else {
-					buildFolder.buildType = NONE
-					boldYellow.Printf("WARNING : Can't parse json: %s\n", "./"+buildFolder.name+"/"+VOLUND_BUILD_FILENAME)
-				}
-			*/
 		}
 
 		var mainExecutable *ExecutableType
@@ -378,30 +366,50 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 			}
 		}
 
+		errorOccured := false
+
 		fmt.Printf("\n")
 		for i := 0; i < len(staticLibs); i++ {
 			staticType := staticLibs[i]
-			if (contains(volundRootFileObj.Builder.StaticLibs, staticType.targetName) == false && contains(mainExecutable.staticLibsDeps, staticType.targetName) == false) || handleStatic(staticType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs) == false {
-				staticLibs = append(staticLibs[:i], staticLibs[i+1:]...)
-				i = -1
+			if (contains(volundRootFileObj.Builder.StaticLibs, staticType.targetName) == true || contains(mainExecutable.staticLibsDeps, staticType.targetName) == true) {
+				errorOccured = handleStatic(staticType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs)
+				if errorOccured == false {
+					staticLibs = append(staticLibs[:i], staticLibs[i+1:]...)
+					i = -1
+				}
+			}
+			if fatalError && errorOccured {
+				return
 			}
 		}
 		for i := 0; i < len(sharedLibs); i++ {
 			sharedLibType := sharedLibs[i]
-			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.targetName) == false && contains(mainExecutable.sharedLibsDeps, sharedLibType.targetName) == false) || handleSharedLib(sharedLibType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs) == false {
-				sharedLibs = append(sharedLibs[:i], sharedLibs[i+1:]...)
-				i = -1
+			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.targetName) == true || contains(mainExecutable.sharedLibsDeps, sharedLibType.targetName) == true) {
+				errorOccured = handleSharedLib(sharedLibType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs)
+				if errorOccured {
+					sharedLibs = append(sharedLibs[:i], sharedLibs[i+1:]...)
+					i = -1
+				}
+			}
+			if fatalError && errorOccured {
+				return
 			}
 		}
 
 		for i := 0; i < len(executables); i++ {
 			executableType := executables[i]
-			if contains(volundRootFileObj.Builder.Executables, executableType.targetName) == false || handleExecutable(executableType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs) == false {
-				executables = append(executables[:i], executables[i+1:]...)
-				if volundRootFileObj.Builder.MainExecutable == executableType.targetName {
-					mainExecutableError = true
+			if contains(volundRootFileObj.Builder.Executables, executableType.targetName) == true {
+				errorOccured = handleExecutable(executableType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs)
+				if errorOccured == false {
+					executables = append(executables[:i], executables[i+1:]...)
+					if volundRootFileObj.Builder.MainExecutable == executableType.targetName {
+						mainExecutableError = true
+					}
+					i = -1
 				}
-				i = -1
+			}
+			if fatalError && errorOccured {
+				return
 			}
 		}
 
@@ -410,14 +418,16 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 }
 
 func main() {
-	//	var argsWithProg []string = os.Args
+	var argsWithProg []string = os.Args
 	var subFiles []VolundBuildFolder
 	var rootVolundFolder VolundBuildFolder
 	var rootVolundFile []byte
 	var subVolundFile []byte
 
-	// argsWithProg = os.Args[1:]
+	argsWithProg = os.Args[1:]
 
+	initGlobals()
+	handleCommands(argsWithProg)
 	initCustomColors()
 
 	files, err := ioutil.ReadDir(".")

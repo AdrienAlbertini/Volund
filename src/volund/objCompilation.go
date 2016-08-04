@@ -128,28 +128,30 @@ func buildObjFile(objType ObjFileRequirement, srcFilePath string,
 	oFilePath := objType.outFolder + "/" + strings.Replace(objType.srcFiles[i], objType.srcExtension, ".o", -1)
 	*objectFilesPath = append(*objectFilesPath, oFilePath)
 
-	mutex.Lock()
-	cppStat, cppErr := os.Stat(objType.folderInfos.path + "/" + srcFilePath)
-	if cppErr == nil {
-		objStat, objErr := os.Stat(oFilePath)
-		if objErr == nil {
-			cppDuration := cppStat.ModTime()
-			objDuration := objStat.ModTime()
-	//		cppParsedTime := cppDuration.Second()
-	//		objParsedTime := objDuration.Second()
+	if rebuildAll == false {
+		mutex.Lock()
+		cppStat, cppErr := os.Stat(objType.folderInfos.path + "/" + srcFilePath)
+		if cppErr == nil {
+			objStat, objErr := os.Stat(oFilePath)
+			if objErr == nil {
+				cppDuration := cppStat.ModTime()
+				objDuration := objStat.ModTime()
+				//		cppParsedTime := cppDuration.Second()
+				//		objParsedTime := objDuration.Second()
 
-		//	fmt.Printf("CppModTime: %s | ObjModTime: %s\n", cppDuration, objDuration)
-		//	fmt.Printf("CppParsedTime: %d | ObjParsedTime: %d | Diff: %f\n", cppParsedTime, objParsedTime, objDuration.Sub(cppDuration).Hours())
-			if objDuration.Sub(cppDuration).Hours() > 0 {
-				*success = true
-				bar.Increment()
-				objCompleteChan <- 1
-				mutex.Unlock()
-				return
+				//	fmt.Printf("CppModTime: %s | ObjModTime: %s\n", cppDuration, objDuration)
+				//	fmt.Printf("CppParsedTime: %d | ObjParsedTime: %d | Diff: %f\n", cppParsedTime, objParsedTime, objDuration.Sub(cppDuration).Hours())
+				if objDuration.Sub(cppDuration).Hours() > 0 {
+					*success = true
+					bar.Increment()
+					objCompleteChan <- 1
+					mutex.Unlock()
+					return
+				}
 			}
 		}
+		mutex.Unlock()
 	}
-	mutex.Unlock()
 
 	cmd := exec.Command(compiler, args...)
 	out, err := cmd.CombinedOutput()

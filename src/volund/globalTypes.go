@@ -40,3 +40,10 @@ var compilerFlags []string
 var osType VolundOSType
 var compiler string
 var builder BuilderType
+var rebuildAll bool
+var fatalError bool
+
+func initGlobals() {
+	rebuildAll = false
+	fatalError = false
+}
