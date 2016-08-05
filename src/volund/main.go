@@ -366,32 +366,32 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 			}
 		}
 
-		errorOccured := false
+		handleSuccess := true
 
 		fmt.Printf("\n")
 		for i := 0; i < len(staticLibs); i++ {
 			staticType := staticLibs[i]
 			if (contains(volundRootFileObj.Builder.StaticLibs, staticType.targetName) == true || contains(mainExecutable.staticLibsDeps, staticType.targetName) == true) {
-				errorOccured = handleStatic(staticType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs)
-				if errorOccured == false {
+				handleSuccess = handleStatic(staticType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs)
+				if handleSuccess == false {
 					staticLibs = append(staticLibs[:i], staticLibs[i+1:]...)
 					i = -1
 				}
 			}
-			if fatalError && errorOccured {
+			if fatalError && handleSuccess == false {
 				return
 			}
 		}
 		for i := 0; i < len(sharedLibs); i++ {
 			sharedLibType := sharedLibs[i]
 			if (contains(volundRootFileObj.Builder.SharedLibs, sharedLibType.targetName) == true || contains(mainExecutable.sharedLibsDeps, sharedLibType.targetName) == true) {
-				errorOccured = handleSharedLib(sharedLibType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs)
-				if errorOccured {
+				handleSuccess = handleSharedLib(sharedLibType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs)
+				if handleSuccess == false {
 					sharedLibs = append(sharedLibs[:i], sharedLibs[i+1:]...)
 					i = -1
 				}
 			}
-			if fatalError && errorOccured {
+			if fatalError && handleSuccess == false {
 				return
 			}
 		}
@@ -399,8 +399,8 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 		for i := 0; i < len(executables); i++ {
 			executableType := executables[i]
 			if contains(volundRootFileObj.Builder.Executables, executableType.targetName) == true {
-				errorOccured = handleExecutable(executableType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs)
-				if errorOccured == false {
+				handleSuccess = handleExecutable(executableType, volundRootFileObj.Builder.ExternLibs, volundRootFileObj.Builder.ExternIncludes, staticLibs)
+				if handleSuccess == false {
 					executables = append(executables[:i], executables[i+1:]...)
 					if volundRootFileObj.Builder.MainExecutable == executableType.targetName {
 						mainExecutableError = true
@@ -408,7 +408,7 @@ func handleFiles(rootVolundBuildFolder VolundBuildFolder, subFiles []VolundBuild
 					i = -1
 				}
 			}
-			if fatalError && errorOccured {
+			if fatalError && handleSuccess == false {
 				return
 			}
 		}
